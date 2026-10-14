@@ -59,8 +59,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.offline:
         log.info("Offline mode: rule-based fallback only")
     elif settings.api_key:
-        client = GeminiClient(settings.api_key, settings.model, settings.max_attempts)
-        log.info("LLM: Gemini model '%s' (API key loaded, not shown)", settings.model)
+        client = GeminiClient(settings.api_key, settings.models, settings.max_attempts)
+        log.info("LLM: Gemini model '%s', fallbacks %s (API key loaded, not shown)",
+                 settings.model, settings.models[1:])
     else:
         log.warning("No GEMINI_API_KEY found (.env or environment): using rule-based FALLBACK for all emails")
 

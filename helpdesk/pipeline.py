@@ -222,7 +222,7 @@ class TriageAgent:
         conf = float(triage.confidence or 0.5)
         if conf > 1:  # model returned a percentage
             conf = conf / 100
-        conf = max(0.0, min(1.0, conf))
+        conf = max(0.0, min(0.95, conf))  # never fully certain: a human still reviews drafts
         conf -= 0.1 * min(len(dropped), 2)
         conf -= 0.03 * len(repairs)
         conf -= 0.1 if regenerated else 0
