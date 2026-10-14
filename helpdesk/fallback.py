@@ -10,10 +10,10 @@ import re
 from .policy import Policy
 
 CATEGORY_KEYWORDS = {
-    "fee": r"\bfees?\b|challan|voucher|refund|installment|instalment|late fee|paise|payment|\bpaid\b|withdraw",
-    "hostel": r"hostel|(?<!reading )\broom\b|warden|\bmess\b|geyser|plumb|kamra|roommate|electricity|furniture",
-    "academic": r"transcript|\bexams?\b|attendance|\bcourse|result|re-?evaluation|re-?check|\bdean\b|grade|marks",
-    "technical": r"wi-?fi|\blms\b|portal (is |was )?(down|not working)|login|password|internet|account (is |says )?locked|library|network",
+    "fee": r"\bfees?\b|challan|voucher|refund|installment|instalment|late fee|paise|payment|\bpaid\b|withdraw|فیس|چالان|واؤچر|ووچر",
+    "hostel": r"hostel|(?<!reading )\broom\b|warden|\bmess\b|geyser|plumb|kamra|roommate|electricity|furniture|ہاسٹل|کمرہ|کمرے|میس",
+    "academic": r"transcript|\bexams?\b|attendance|\bcourse|result|re-?evaluation|re-?check|\bdean\b|grade|marks|امتحان|ٹرانسکرپٹ|حاضری|نتیجہ",
+    "technical": r"wi-?fi|\blms\b|portal (is |was )?(down|not working)|login|password|internet|account (is |says )?locked|library|network|وائی فائی|پورٹل|پاس ورڈ",
 }
 CATEGORY_SECTION = {"fee": "fee", "hostel": "hostel", "academic": "academ", "technical": "technical"}
 SIGNAL_CATEGORY = {"harassment": "harassment", "wellbeing": "wellbeing", "suspicious": "security", "safety": "hostel"}
@@ -69,7 +69,9 @@ EXPANSIONS = {
     r"\bfood\b|meal|khana|undercooked": "mess",
     r"re-?check|recheck|remark": "re-evaluation",
     r"in parts|installment|qist": "installments",
-    r"challan": "voucher",
+    r"challan|چالان|واؤچر|ووچر": "voucher",
+    r"room change|change (my |the )?room|another room|move (to|rooms)|kamra badal|room badal|room change karna": "room changes",
+    r"فیس": "fee",
 }
 MULTI_ISSUE = re.compile(r"(?i)\b\d\)|\b(also|another|second|secondly|plus)\b|three things|two things")
 
@@ -115,7 +117,7 @@ def _short(text: str, max_words: int = 26) -> str:
 
 def fallback_reply(name: str, language: str, topic_refs: list[str], signal_lines: dict[str, list[str]],
                    unclear: bool, policy: Policy, not_covered_office: str | None = None) -> str:
-    t = TEXT.get(language, TEXT["english"])
+    t = _lang(language)
     parts = [f"Dear {name},", t["thanks"]]
     for key, codes in signal_lines.items():
         if key in t:
@@ -133,3 +135,33 @@ def fallback_reply(name: str, language: str, topic_refs: list[str], signal_lines
             parts.append(t["review"])
     parts.append("Regards,\nStudent Helpdesk")
     return "\n\n".join(parts[:2]) + "\n\n" + " ".join(parts[2:-1]) + "\n\n" + parts[-1]
+
+
+def _lang(language: str) -> dict:
+    # Urdu-script emails get Roman Urdu templates (noted in agent_notes via language)
+    return TEXT["roman_urdu"] if language in ("roman_urdu", "urdu") else TEXT["english"]
+
+
+def no_action_reply(name: str, language: str, kind: str) -> str:
+    what = "an automatic reply" if kind == "auto_reply" else "a promotional or bulk message"
+    if language in ("roman_urdu", "urdu"):
+        body = "Yeh paigham khud-kaar ya promotional lagta hai; is par koi karwai zaroori nahi."
+    else:
+        body = f"This message appears to be {what}, so no action is needed from the helpdesk."
+    return f"Dear {name},\n\n{body}\n\nRegards,\nStudent Helpdesk"
+
+
+def thanks_reply(name: str, language: str) -> str:
+    if language in ("roman_urdu", "urdu"):
+        body = "Aap ke paigham ka shukriya. Agar dobara koi masla ho to humein zaroor likhiye."
+    else:
+        body = "Thank you for letting us know. If anything else comes up, please write to us again."
+    return f"Dear {name},\n\n{body}\n\nRegards,\nStudent Helpdesk"
+
+
+def looks_like_question(text: str) -> bool:
+    """A real (if out-of-scope) request, as opposed to gibberish: enough real words + a question/request."""
+    words = [w for w in re.findall(r"[A-Za-z]{3,}", text) if re.search(r"[aeiou]", w.lower())]
+    distinct = {w.lower() for w in words}
+    asks = re.search(r"(?i)\?|\b(how|what|when|where|who|which|can|could|please|kya|kaise|kab)\b", text)
+    return len(distinct) >= 5 and bool(asks)

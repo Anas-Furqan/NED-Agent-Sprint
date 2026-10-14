@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-CATEGORIES = ("fee", "hostel", "academic", "technical", "wellbeing", "harassment", "security", "unclear", "other")
-PRIORITIES = ("low", "medium", "high")
-PRIORITY_RANK = {p: i for i, p in enumerate(PRIORITIES)}
+from .priority import PRIORITIES, max_priority, normalize_priority  # noqa: F401  (re-exported)
+
+CATEGORIES = ("fee", "hostel", "academic", "technical", "wellbeing", "harassment", "security",
+              "spam", "auto_reply", "unclear", "other")
 
 
 class Email(BaseModel):
@@ -25,7 +27,8 @@ class Issue(BaseModel):
 
 
 class LLMTriage(BaseModel):
-    """Schema the model must return (kept simple: no defaults/constraints, for Gemini)."""
+    """Schema the model must return (kept simple: no defaults/constraints, for Gemini).
+    The before-validators tolerate sloppy model output (text confidence, null lists...)."""
 
     primary_category: str
     secondary_categories: list[str]
@@ -38,6 +41,42 @@ class LLMTriage(BaseModel):
     confidence: float
     detected_language: str
     agent_notes: str
+
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def coerce_confidence(cls, v):
+        if isinstance(v, str):
+            words = {"very high": 0.9, "high": 0.8, "medium": 0.6, "moderate": 0.6, "low": 0.3}
+            m = re.search(r"\d+(\.\d+)?", v)
+            v = float(m.group(0)) if m else words.get(v.strip().lower(), 0.5)
+        v = float(v if v is not None else 0.5)
+        return v / 100 if v > 1 else max(0.0, v)
+
+    @field_validator("secondary_categories", "policy_refs", "issues", mode="before")
+    @classmethod
+    def none_to_list(cls, v):
+        if v is None:
+            return []
+        return [v] if isinstance(v, (str, dict)) else v
+
+    @field_validator("primary_category", "priority", "escalation_reason", "reply_draft",
+                     "detected_language", "agent_notes", mode="before")
+    @classmethod
+    def none_to_str(cls, v):
+        return "" if v is None else str(v)
+
+    @field_validator("escalate", mode="before")
+    @classmethod
+    def coerce_bool(cls, v):
+        if isinstance(v, str):
+            return v.strip().lower() in ("true", "yes", "1", "y")
+        return bool(v)
+
+
+# Used to fill keys the model forgot, so one missing field does not waste a retry.
+TRIAGE_DEFAULTS = dict(primary_category="unclear", secondary_categories=[], issues=[], priority="medium",
+                       escalate=False, escalation_reason="", policy_refs=[], reply_draft="",
+                       confidence=0.5, detected_language="english", agent_notes="")
 
 
 class LLMReply(BaseModel):
@@ -69,17 +108,8 @@ def normalize_category(value: str) -> str:
     aliases = {"fees": "fee", "finance": "fee", "accounts": "fee", "academics": "academic",
                "exam": "academic", "tech": "technical", "it": "technical", "safety": "hostel",
                "medical": "wellbeing", "health": "wellbeing", "phishing": "security",
-               "suspicious": "security", "legal": "other", "gibberish": "unclear"}
+               "suspicious": "security", "legal": "other", "gibberish": "unclear",
+               "marketing": "spam", "newsletter": "spam", "autoreply": "auto_reply",
+               "auto-reply": "auto_reply", "out_of_office": "auto_reply", "bounce": "auto_reply"}
     v = aliases.get(v, v)
     return v if v in CATEGORIES else "other"
-
-
-def normalize_priority(value: str) -> str:
-    v = (value or "").strip().lower()
-    if v in ("urgent", "critical"):
-        return "high"
-    return v if v in PRIORITIES else "medium"
-
-
-def max_priority(*values: str) -> str:
-    return max(values, key=lambda p: PRIORITY_RANK.get(p, 1))

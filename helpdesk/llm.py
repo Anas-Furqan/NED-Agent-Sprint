@@ -28,6 +28,7 @@ class GeminiClient:
         self.models = list(dict.fromkeys([models] if isinstance(models, str) else models))
         self.max_attempts = max_attempts
         self.calls = 0
+        self.last = {"model": None, "attempts": 0, "errors": [], "repaired": []}
 
     @property
     def model(self) -> str:
@@ -55,23 +56,29 @@ class GeminiClient:
             system_instruction=system,
             response_mime_type="application/json",
             response_schema=schema,
-            temperature=0.2,
+            temperature=0,
+            seed=7,
         )
+        self.last = {"model": None, "attempts": 0, "errors": [], "repaired": []}
         last_error, overloaded = "", 0
         for attempt in range(1, self.max_attempts + 1):
             wait = 2.0 * 2 ** (attempt - 1)
             try:
                 self.calls += 1
+                self.last["attempts"] = attempt
+                self.last["model"] = self.model
                 resp = self.client.models.generate_content(model=self.model, contents=prompt, config=config)
                 parsed = getattr(resp, "parsed", None)
                 if isinstance(parsed, schema):
                     return parsed
-                return schema.model_validate(json.loads(_strip_fences(resp.text or "")))
+                return self._validate(schema, json.loads(_strip_fences(resp.text or "")))
             except (ValidationError, json.JSONDecodeError, ValueError) as exc:
                 last_error = f"invalid JSON from model: {str(exc)[:150]}"
+                self.last["errors"].append(last_error[:120])
             except Exception as exc:  # network, 429, 5xx, timeouts
                 msg = str(exc)
                 last_error = msg[:200]
+                self.last["errors"].append(f"{self.model}: {msg[:100]}")
                 if ("429" in msg or "RESOURCE_EXHAUSTED" in msg) and "PerDay" in msg:
                     if not self._rotate("is out of daily quota", drop=True):
                         raise LLMUnavailable("daily quota exhausted on all models (429 PerDay)") from exc
@@ -95,6 +102,23 @@ class GeminiClient:
                             attempt, self.max_attempts, last_error[:90], wait)
                 time.sleep(wait)
         raise LLMUnavailable(f"gave up after {self.max_attempts} attempts: {last_error}")
+
+
+    def _validate(self, schema: type[T], data: dict) -> T:
+        """Validate; if the model forgot keys that have safe defaults, fill them and log it."""
+        try:
+            return schema.model_validate(data)
+        except ValidationError:
+            from .schemas import TRIAGE_DEFAULTS
+
+            if not isinstance(data, dict) or schema.__name__ != "LLMTriage":
+                raise
+            missing = [k for k in TRIAGE_DEFAULTS if k not in data]
+            if not missing:
+                raise
+            log.warning("    model omitted keys %s: filled with safe defaults", missing)
+            self.last["repaired"].append(f"filled missing keys {missing}")
+            return schema.model_validate({**TRIAGE_DEFAULTS, **data})
 
 
 def _strip_fences(text: str) -> str:

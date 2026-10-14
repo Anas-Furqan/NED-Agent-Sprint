@@ -18,6 +18,7 @@ RESPONSE_WINDOW = re.compile(
     r"(?i)(?:resolved|respond\w*|response|processed|outcome comes)[^.]{0,80}?"
     r"within\s+(\d+)\s+(working days|business days|hours|days)"
 )
+ROUTE = re.compile(r"(?i)(?:escalated?|flag)(?:\s+immediately)?\s+to\s+([^.:;]+?)(?=\.|;|:|$)")
 STOPWORDS = set(
     """a an the and or of to in on for with by is are be can only after before within
     from their they this that it as at if not no any all must up per gets get has have
@@ -59,6 +60,20 @@ class Policy:
             if any(k.lower() in low for k in keywords):
                 found.append(code)
         return found
+
+    def routes(self, codes: list[str]) -> list[str]:
+        """Who an escalation goes to, read from the rule text ('escalate ... to X', 'flag to X')."""
+        out: list[str] = []
+        for code in codes:
+            rule = self.rules.get(code)
+            if not rule:
+                continue
+            for m in ROUTE.finditer(rule.text):
+                target = re.sub(r"^(the|a)\s+", "", m.group(1).strip(), flags=re.I)
+                target = "Duty staff member" if target.lower() == "human" else target[0].upper() + target[1:]
+                if target not in out:
+                    out.append(target)
+        return out
 
     def rules_in_section(self, section_keyword: str) -> list[str]:
         return [c for c, r in self.rules.items() if section_keyword.lower() in r.section.lower()]

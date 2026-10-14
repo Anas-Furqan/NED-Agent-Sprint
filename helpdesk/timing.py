@@ -80,22 +80,21 @@ def _durations(sentence: str, now: datetime | None) -> list[tuple[str, float]]:
     return out
 
 
-DEADLINE_HIGH = re.compile(
-    r"(?i)\b(tonight|today|this (evening|afternoon)|in (\d+|a few|two|three) hours|aaj( raat)?|abhi)\b"
-    r"[^.?!\n]{0,40}\b(deadline|due|submission|quiz|exam|last date|test|closes?)\b"
-    r"|\b(deadline|due|submission|quiz|exam|last date|test)\b[^.?!\n]{0,40}\b(tonight|today|aaj)\b"
-    r"|\b(submission|quiz|exam|deadline)\b[^.?!\n]{0,20}\b(tonight|at \d{1,2}\s?(am|pm))"
-)
-DEADLINE_MEDIUM = re.compile(r"(?i)\b(tomorrow|kal)\b[^.?!\n]{0,30}\b(deadline|due|last date|exam|submission)\b"
-                             r"|\b(deadline|due date|last date)\b[^.?!\n]{0,30}\b(tomorrow|kal)\b")
+SOON = (r"(tonight|today|tomorrow|this (evening|afternoon|week)|in (\d+|a few|two|three) hours|within "
+        r"(24|48) hours|aaj( raat)?|kal|parson|abhi|by (monday|tuesday|wednesday|thursday|friday|saturday|sunday))")
+ADMIN = r"(deadline|due date|due|last date|closes?|application|apply|fee|challan|voucher|form)"
+COURSE = r"(quiz|exam|test|submission|assignment|viva|presentation|lab)"
+DEADLINE_ADMIN = re.compile(rf"(?i)\b{SOON}\b[^.?!\n]{{0,40}}\b{ADMIN}\b|\b{ADMIN}\b[^.?!\n]{{0,40}}\b{SOON}\b")
+DEADLINE_COURSE = re.compile(rf"(?i)\b{SOON}\b[^.?!\n]{{0,40}}\b{COURSE}\b|\b{COURSE}\b[^.?!\n]{{0,40}}\b{SOON}\b")
 
 
 def deadline_urgency(body: str) -> tuple[str, str] | None:
-    """(priority floor, matched text) for hard deadlines the student mentions."""
-    for level, pat in (("high", DEADLINE_HIGH), ("medium", DEADLINE_MEDIUM)):
+    """(priority floor, matched text). Administrative deadline within ~48h -> high (missing it costs
+    money or an application); coursework deadline (quiz, exam) -> medium (blocked process)."""
+    for level, pat in (("high", DEADLINE_ADMIN), ("medium", DEADLINE_COURSE)):
         for m in pat.finditer(body or ""):
             if re.search(r"(?i)\b(days?|weeks?|months?)\b|from today", m.group(0)):
-                continue  # "10 days from today" is not an imminent deadline
+                continue  # "10 days from today" is not imminent
             return level, m.group(0)
     return None
 

@@ -25,3 +25,5 @@ outbox.json.tmp
 logs/
 .DS_Store
 Thumbs.db
+.cache/
+run_trace.json

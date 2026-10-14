@@ -7,7 +7,8 @@ from pathlib import Path
 import pytest
 
 from helpdesk.llm import GeminiClient, LLMUnavailable
-from helpdesk.pipeline import TriageAgent, clean_refs, load_email
+from helpdesk.loader import load_email
+from helpdesk.pipeline import Runner, TriageAgent, clean_refs
 from helpdesk.policy import load_policy, parse_policy
 from helpdesk.schemas import LLMReply, LLMTriage, OutboxEntry
 from helpdesk.timing import check_overdue, deadline_urgency
@@ -24,6 +25,7 @@ class FakeClient:
         self.triage, self.reply, self.fail = triage, reply, fail
         self.daily_quota_exhausted = False
         self.calls = 0
+        self.last = {"model": "fake-model", "attempts": 1, "errors": [], "repaired": []}
 
     def generate(self, system, prompt, schema):
         self.calls += 1
@@ -141,17 +143,17 @@ def test_malformed_and_empty_files(tmp_path):
     (tmp_path / "bad.json").write_text("{not json", encoding="utf-8")
     (tmp_path / "empty.json").write_text("", encoding="utf-8")
     write_email(tmp_path, "E900", "", subject="")
-    assert load_email(tmp_path / "bad.json")[0] is None
-    out = tmp_path / "outbox.json"
-    entries = TriageAgent(POLICY, FakeClient(triage()), delay_seconds=0).run(tmp_path, out)
-    assert len(entries) == 3 and all(e.escalate and e.confidence <= 0.2 for e in entries)
+    assert load_email(tmp_path / "bad.json").email is None
+    out = tmp_path / "out" / "outbox.json"
+    results = Runner(TriageAgent(POLICY, FakeClient(triage()), delay_seconds=0), tmp_path, out).run()
+    assert len(results) == 3 and all(r.entry.escalate and r.entry.confidence <= 0.2 for r in results)
 
 
 def test_output_matches_sample_format(tmp_path):
     write_email(tmp_path, "E002", "My fee voucher is not showing on the portal.")
     write_email(tmp_path, "E001", "My fee voucher is not showing on the portal.")
-    out = tmp_path / "outbox.json"
-    TriageAgent(POLICY, FakeClient(triage()), delay_seconds=0).run(tmp_path, out)
+    out = tmp_path / "out" / "outbox.json"
+    Runner(TriageAgent(POLICY, FakeClient(triage()), delay_seconds=0), tmp_path, out).run()
     sample = json.loads((ROOT / "sample_outbox.json").read_text(encoding="utf-8"))
     produced = json.loads(out.read_text(encoding="utf-8"))
     assert isinstance(produced, list) and [e["email_id"] for e in produced] == ["E001", "E002"]
@@ -166,7 +168,8 @@ def test_deadline_raises_priority_only(tmp_path):
     entry = run_one(tmp_path, FakeClient(triage(primary_category="technical", policy_refs=["TECH-1"],
                                                 reply_draft="Dear Ali,\n\nContact the IT Helpdesk (TECH-1).\n\nRegards,\nStudent Helpdesk")),
                     "My LMS account is locked and my quiz submission is tonight.")
-    assert entry.priority == "high" and entry.escalate is False
+    assert entry.priority == "medium" and entry.escalate is False  # coursework deadline: blocked process
+    assert deadline_urgency("My fee due date is tomorrow.")[0] == "high"  # administrative deadline
     assert deadline_urgency("The scholarship deadline is 10 days from today.") is None
 
 

@@ -20,9 +20,11 @@ Hard rules:
   clear; use wellbeing/harassment/security for those cases; "unclear" for gibberish or no clear request.
 - issues: one entry per distinct problem, each with its own category and policy_refs. A multi-issue
   email gets one reply addressing EVERY issue. Escalate if ANY issue needs it.
-- priority: high = safety, harassment, medical/wellbeing, legal/media threat, suspicious message, or
-  a hard deadline within ~24h; medium = actionable request, time-sensitive, or overdue complaint;
-  low = general information question or unclear message.
+- priority: high = safety, harassment, medical/wellbeing, legal/media threat, suspicious message,
+  outage affecting many users, or an administrative deadline (fee due date, last date, application
+  deadline) within ~48h; medium = a blocked process (locked account, missing voucher), overdue
+  complaint, money matters, coursework deadlines; low = informational questions, thank-you notes,
+  spam, auto-replies, unclear messages.
 - escalate=true ONLY when a human must act on this case now: an escalation rule (ESC-*) or a rule
   that says "escalate" applies, a complaint is past its stated response time, an outage affects many
   users, or the message is unclear in a way that is risky. Do NOT escalate routine cases where the
@@ -47,6 +49,23 @@ Hard rules:
 - Hazards: tell them to stay away from the hazard; it is escalated immediately.
 - Legal/media threats: stay calm, do not argue or admit fault.
 - Gibberish/unclear: politely ask what they need; low confidence.
+- Out of scope (not covered by any rule, e.g. scholarships, sports, admissions, parking):
+  category "other", say it is not covered by the helpdesk policy, name the most likely office. No
+  invented rules, fees or dates. policy_refs may be empty.
+- Thank-you / "issue resolved" notes: short courteous reply, low priority, no escalation, category
+  of the original topic or "other".
+- Marketing/newsletters: category "spam"; auto-replies, out-of-office, bounces: "auto_reply". Low
+  priority, no escalation, one-line neutral reply ("No action is needed on this message.").
+  Phishing is NOT spam: it is "security" and escalated.
+- Parents, faculty or other non-student senders: answer politely with the same policy; never share a
+  student's personal data with them beyond what they already wrote.
+- Bribery, grade/attendance changes, leaked papers, cheating: refuse politely, escalate to a human,
+  category "academic", no policy promise.
+- "This exam is killing me" style figures of speech are not emergencies by themselves; real
+  hopelessness or self-harm language is (wellbeing, escalate). When genuinely unsure, escalate.
+- Angry or rude emails without a legal/media threat: stay calm, no legal escalation.
+- Never include links/URLs in the reply, and never repeat a link from the email.
+- DETECTED_LANGUAGE "urdu" means Urdu script: reply in Urdu script if you can, otherwise Roman Urdu.
 - agent_notes: 1-2 lines explaining why you chose the category, rules and escalation.
 """
 

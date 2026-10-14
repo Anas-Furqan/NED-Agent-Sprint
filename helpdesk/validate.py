@@ -14,7 +14,8 @@ ROMAN_URDU = set(
     gayi wala wali chahiye sakta sakti hoga hogi diya liya jab tak""".split()
 )
 GREETING_WORDS = {"assalam", "o", "alaikum", "salam", "walaikum", "aoa"}
-NON_PERSON = re.compile(r"(?i)\b(admin|notice|portal|system|support|team|noreply|no-reply|test|update|service|info)\b")
+NON_PERSON = re.compile(r"(?i)\b(admin|notice|portal|system|support|team|noreply|no-reply|test|update|service|info|"
+                        r"assistant|ignore|instructions?|prompt|security|deals?|promo|offers?)\b")
 
 PROMISE_PATTERNS = [
     r"(?i)\b(we|i|helpdesk) (have|has|will) (waive|waived|approve|approved|refund|refunded|reverse|reversed)",
@@ -33,7 +34,15 @@ CLINIC = re.compile(r"(?i)(clinic|counsel?ling)")
 CONFIDENTIAL_ACK = re.compile(r"(?i)(confiden|privacy|private|discre|only with|not share your|raaz|khufia)")
 
 
+URDU_SCRIPT = re.compile(r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]")
+URL = re.compile(r"(?i)\b(?:https?://|www\.)\S+")
+
+
 def detect_language(text: str) -> str:
+    """english | roman_urdu | urdu (Arabic/Nastaliq script)."""
+    letters = [c for c in (text or "") if c.isalpha()]
+    if letters and sum(1 for c in letters if URDU_SCRIPT.match(c)) / len(letters) > 0.3:
+        return "urdu"
     tokens = [t for t in re.findall(r"[a-z']+", (text or "").lower()) if t not in GREETING_WORDS]
     if not tokens:
         return "english"
@@ -44,7 +53,7 @@ def detect_language(text: str) -> str:
 
 def greeting_name(from_name: str, body: str = "") -> str:
     name = (from_name or "").strip()
-    if (not name or NON_PERSON.search(name) or re.search(r"\d|@", name) or len(name) < 3
+    if (not name or NON_PERSON.search(name) or re.search(r"\d|@|:|<|>", name) or len(name) < 3 or len(name) > 40
             or not re.search(r"[aeiouAEIOU]", name)):
         return "Student"
     return name
@@ -95,10 +104,15 @@ def repair_and_check(reply: str, *, name: str, language: str, refs: list[str], s
     words = word_count(reply)
     if words >= MAX_WORDS:
         res.problems.append(f"reply has {words} words; must be under {MAX_WORDS}")
-    if detect_language(reply) != language and language == "roman_urdu":
+    reply_lang = detect_language(reply)
+    if language == "roman_urdu" and reply_lang == "english":
         res.problems.append("email is in Roman Urdu; reply must be in Roman Urdu")
-    if language == "english" and detect_language(reply) == "roman_urdu":
+    if language == "urdu" and reply_lang == "english":
+        res.problems.append("email is in Urdu; reply must be in Urdu script (or Roman Urdu)")
+    if language == "english" and reply_lang != "english":
         res.problems.append("email is in English; reply must be in English")
+    if URL.search(reply):
+        res.problems.append("reply must not contain links (never repeat links from an email)")
     for pat in PROMISE_PATTERNS:
         m = re.search(pat, reply)
         if m:
