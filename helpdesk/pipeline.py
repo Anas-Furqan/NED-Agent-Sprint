@@ -459,6 +459,14 @@ def assign_ids(files: list[Path]) -> dict[Path, tuple[Loaded, str]]:
     return out
 
 
+def trace_path_for(out: Path) -> Path:
+    """Each outbox gets its own trace: outbox.json -> run_trace.json, edge_outbox.json -> edge_trace.json."""
+    if out.name == "outbox.json":
+        return out.with_name("run_trace.json")
+    stem = out.stem.replace("outbox", "trace") if "outbox" in out.stem else f"{out.stem}_trace"
+    return out.with_name(f"{stem}.json")
+
+
 def read_json(path: Path, default):
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -475,7 +483,7 @@ class Runner:
 
     def __init__(self, agent: TriageAgent, inbox: Path, out: Path, trace_path: Path | None = None):
         self.agent, self.inbox, self.out = agent, inbox, out
-        self.trace_path = trace_path or out.with_name("run_trace.json")
+        self.trace_path = trace_path or trace_path_for(out)
 
     def run(self, mode: str = "all", only: list[Path] | None = None) -> list[Result]:
         started = datetime.now().replace(microsecond=0)
@@ -530,7 +538,8 @@ class Runner:
         ended = datetime.now().replace(microsecond=0)
         client = self.agent.client
         summary = {
-            "run_id": run_id, "mode": mode if only is None else "file", "started": started.isoformat(),
+            "run_id": run_id, "mode": mode if only is None else "file", "inbox": str(self.inbox),
+            "started": started.isoformat(),
             "ended": ended.isoformat(), "processed": len(results),
             "escalated": sum(r.entry.escalate for r in results),
             "fallback": sum(r.fallback for r in results), "invalid": sum(r.invalid for r in results),

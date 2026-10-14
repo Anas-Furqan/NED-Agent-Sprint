@@ -30,7 +30,8 @@ class Loaded:
 
 
 def is_email_file(path: Path) -> bool:
-    return path.is_file() and path.suffix.lower() in EMAIL_SUFFIXES and not path.name.startswith(".")
+    # names starting with "." or "_" are metadata or hidden files (sidecars), never emails
+    return path.is_file() and path.suffix.lower() in EMAIL_SUFFIXES and not path.name.startswith((".", "_"))
 
 
 def decode(raw: bytes) -> tuple[str, str]:
