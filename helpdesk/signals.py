@@ -46,6 +46,7 @@ SPECS: list[SignalSpec] = [
             r"gas (leak|smell)", r"(ceiling|wall|roof|stair\w*|balcony)[^.]{0,30}(crack|collaps|falling|fell)",
             r"collaps", r"\baag\b", r"\bkarant\b", r"current (lag|laga|lagta)", r"\bdhu[a]?w?an\b",
             r"chhat[^.]{0,20}gir", r"taar[^.]{0,30}(nangi|latak|spark)",
+            r"\bآگ\b", r"کرنٹ", r"ننگی تار", r"تار ننگی", r"دھواں", r"شارٹ سرکٹ", r"چنگاری",
         ],
         weak=[r"electric", r"wiring", r"\bsocket\b", r"dripping"],
         rule_keywords=["hazard"],
@@ -59,6 +60,7 @@ SPECS: list[SignalSpec] = [
             r"following me", r"threaten(ed|ing|s)? (me|to (hurt|kill|beat|harm))", r"\bbull(y|ied|ying)\b",
             r"blackmail", r"touch(ed|es)? me", r"(scared|afraid) (to come|of him|of her|of them|to go)",
             r"tang kar", r"p[ei]e?cha kar", r"dhamki", r"ghoorta|ghurta",
+            r"ہراساں", r"ہراسگی", r"پیچھا", r"دھمکی", r"تنگ کر",
         ],
         weak=[r"\bscared\b", r"uncomfortable", r"\bthreat", r"\bdarr?\b"],
         rule_keywords=["harassment"],
@@ -75,6 +77,7 @@ SPECS: list[SignalSpec] = [
             r"hopeless", r"self[- ]harm", r"hurt myself", r"panic attack", r"overdose", r"behosh",
             r"jeena nahi", r"zinda nahi rehna", r"marna chaht[ai]", r"mar jana chaht[ai]", r"mar jaun",
             r"khudkushi", r"zindagi (se )?tang", r"jeene ka (koi )?(faida|maqsad) nahi", r"khud ko nuqsan",
+            r"مایوس", r"زندگی ختم", r"خودکشی", r"بیہوش", r"جینے کا کوئی فائدہ",
         ],
         weak=[r"depress", r"anxi(ous|ety)", r"\bstress", r"mentally", r"can'?t cope", r"\bsick\b",
               r"killing me", r"\bkill me\b", r"i'?ll die", r"i will die", r"\bdying\b", r"can'?t take (this|it) any ?more",
@@ -89,7 +92,7 @@ SPECS: list[SignalSpec] = [
             r"\blawyer", r"legal (action|notice)", r"\bsu(e|ing)\b",
             r"(take|taking) (this|it|the matter|this matter)( \w+)? to (the )?(court|media|press|news)",
             r"(go|going) to (the )?(court|media|press|news)", r"social media", r"\bmedia\b", r"\bwakeel",
-            r"court (mein|me|case)", r"\bexpose\b",
+            r"court (mein|me|case)", r"\bexpose\b", r"وکیل", r"عدالت", r"میڈیا",
         ],
         weak=[r"\bcourt\b", r"\bnews\b", r"\bpolice\b"],
         rule_keywords=["legal"],
@@ -191,6 +194,20 @@ def decoded_base64(text: str) -> str:
     return "\n".join(out)
 
 
+PAST_HAZARD = re.compile(r"(?i)\b(was|were|had|there was|yesterday|last night|earlier|this morning|kal raat|kal)\b"
+                         r"[^.\n]{0,60}\b(fire|spark\w*|smoke|short ?circuit|aag|blaze)")
+HAZARD_OVER = re.compile(r"(?i)\b(is|it'?s|has been|was|got|now)\s+(now\s+)?(out|put out|extinguished|over|under control|"
+                         r"stopped|fixed)\b|bujh (gayi|gaya|chuki)|khatam ho (gayi|gaya)|\u0628\u062c\u06be \u06af\u0626\u06cc")
+RESIDUAL = re.compile(r"(?i)\b(smell\w*|smok\w*|spark\w*|black|burnt|burned|warm|hot|crack\w*|exposed|melt\w*|"
+                      r"bu aa|badboo|dhuan)\b")
+
+
+def post_incident(text: str) -> tuple[bool, bool]:
+    """(hazard reported as already over, residual signs like smell/burn marks still present)."""
+    over = bool(PAST_HAZARD.search(text) and HAZARD_OVER.search(text))
+    return over, over and bool(RESIDUAL.search(HAZARD_OVER.split(text, maxsplit=1)[-1] if over else ""))
+
+
 def detect_signals(subject: str, body: str, policy: Policy, from_name: str = "") -> list[Signal]:
     text = f"{from_name}\n{subject}\n{body}"
     signals: list[Signal] = []
@@ -211,6 +228,13 @@ def detect_signals(subject: str, body: str, policy: Policy, from_name: str = "")
                 strong.append("base64-encoded instruction")
             if URL.search(text) and PHISH_WORDS.search(text):
                 strong.append("link asking for login/password details")
+        if strong and spec.name == "safety":
+            over, residual = post_incident(text)
+            if over:  # still escalated (inspection needed), but described truthfully as past
+                label = "post-incident safety inspection (hazard reported as already out" + \
+                        ("; residual damage reported)" if residual else ")")
+                signals.append(Signal("safety_post", label, True, strong[:3], codes, "high" if residual else "medium"))
+                continue
         if strong:
             signals.append(Signal(spec.name, spec.label, True, strong[:3], codes, spec.priority))
             continue
@@ -253,6 +277,7 @@ def message_kind(subject: str, body: str, from_email: str = "") -> str | None:
 CONFIDENTIAL = re.compile(
     r"(?i)(do not|don'?t|please don'?t) (tell|share|reveal|disclose)[^.]{0,30}(name|anyone|identity)"
     r"|confidential|keep (this|it|my name) (private|secret)|anonymous|kisi ko (na|mat) bata|naam (na|mat) bata"
+    r"|کسی کو نہ بتا|نام نہ بتا|راز میں رکھ|خفیہ رکھ"
 )
 
 

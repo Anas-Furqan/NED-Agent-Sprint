@@ -20,18 +20,53 @@ NON_PERSON = re.compile(r"(?i)\b(admin|notice|portal|system|support|team|noreply
 PROMISE_PATTERNS = [
     r"(?i)\b(we|i|helpdesk) (have|has|will) (waive|waived|approve|approved|refund|refunded|reverse|reversed)",
     r"(?i)\b(your|the) (late )?fee (has been|is|will be) (waived|reversed|refunded|approved)",
-    r"(?i)(?<!not )(?<!cannot )(?<!no )\bguarantee(d|s)?\b",
+    r"(?i)(?<!not )(?<!cannot )(?<!no )\bg[ua]+rantee(d|s)?\b(?! (nahi|nahin|not))",
     r"(?i)\bwill (definitely|surely|certainly) be\b",
     r"(?i)\b(he|she|they) will be (punished|expelled|suspended|removed|fired)",
     r"(?i)\bfull refund (is|will be) (approved|processed)",
     r"(?i)\byou will (get|receive) (a )?(full )?refund",
     r"(?i)\b(they|it|we|the [\w' ]{2,30}) will (fix|resolve|restore|repair|reverse|waive|approve|punish)\b",
+    r"(?i)\b(they|he|she|someone|a technician|staff|the [\w' ]{2,30}) will (act|come|arrive|take (immediate )?action|"
+    r"send someone|be there)\b",
+    r"(?i)\bwill be (fixed|resolved|repaired|done|sorted|processed|approved) (immediately|today|right away|"
+    r"within \d+ \w+( \w+)?|by \w+)",
+    r"(?i)\b(i|we) (promise|assure you)\b",
+    # Roman Urdu
+    r"(?i)\b(foran|fori|fauran|turant)\b[^.\n]{0,60}\b(karenge|karein ge|kar denge|denge|dein ge|jayega|jaye ga|"
+    r"jayegi|jaye gi|aa jayega|aayega|aaye ga)\b",
+    r"(?i)\bzaroor\b[^.\n]{0,30}\b(ho|mil|kar|aa) ?(jayega|jaye ga|jayegi|jaye gi|denge|dein ge)\b",
+    r"(?i)\bpakka\b",
+    r"(?i)\baaj hi\b[^.\n]{0,30}\b(jayega|jaye ga|jayegi|denge|karenge)\b",
+    r"(?i)\bhum\b[^.\n]{0,40}\b(theek kar denge|hal kar denge|waive kar denge|refund kar denge|maaf kar denge|kar denge)\b",
+    r"(?i)\b(waive|maaf|refund|wapis)\b[^.\n]{0,15}\b(kar denge|ho jayega|ho jaye ga|mil jayega|mil jaye ga|"
+    r"kar di jaye gi|kar diya jayega)\b",
+    r"(?i)\b(iqdaam|iqdaamat|karwai)\b[^.\n]{0,20}\b(karenge|karein ge|karega|kare ga|karegi)\b",
+    # Urdu script
+    r"\u0641\u0648\u0631\u0627[\u064b]?[^\u06d4\n]{0,40}(\u06a9\u0631 \u062f\u06cc\u06ba \u06af\u06d2|"
+    r"\u06c1\u0648 \u062c\u0627\u0626\u06d2 \u06af\u0627|\u06a9\u0631\u06cc\u06ba \u06af\u06d2)",
+    r"\u0636\u0631\u0648\u0631[^\u06d4\n]{0,30}(\u06c1\u0648 \u062c\u0627\u0626\u06d2 \u06af\u0627|"
+    r"\u0645\u0644 \u062c\u0627\u0626\u06d2 \u06af\u0627|\u06a9\u0631 \u062f\u06cc\u06ba \u06af\u06d2)",
+    r"\u067e\u06a9\u0627", r"\u06af\u0627\u0631\u0646\u0679\u06cc",
 ]
+
+
+def promise_spans(text: str, allowed_numbers: set[int] | frozenset[int] = frozenset()) -> list[str]:
+    """Phrases promising more than the policy allows. A phrase that only quotes a policy timeline
+    (its number is one of the policy's response windows, e.g. 48 hours) is allowed."""
+    found = []
+    for pat in PROMISE_PATTERNS:
+        for m in re.finditer(pat, text or ""):
+            numbers = {int(n) for n in re.findall(r"\d+", m.group(0))}
+            if numbers and numbers <= set(allowed_numbers):
+                continue
+            found.append(m.group(0))
+    return found
 CONFRONT = re.compile(r"(?i)\b(confront|talk to (him|her|them)|tell (him|her|them) to stop|ask (him|her|them) to stop|speak (to|with) (him|her|them))\b")
 SECRET = re.compile(r"(AIza[0-9A-Za-z_\-]{20,}|sk-[A-Za-z0-9]{20,}|Bearer\s+\S{10,})")
 EMAIL_ADDR = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
 CLINIC = re.compile(r"(?i)(clinic|counsel?ling)")
-CONFIDENTIAL_ACK = re.compile(r"(?i)(confiden|privacy|private|discre|only with|not share your|raaz|khufia)")
+CONFIDENTIAL_ACK = re.compile(r"(?i)(confiden|privacy|private|discre|only with|not share your|raaz|khufia|"
+                             r"رازداری|راز|خفیہ|صرف متعلقہ)")
 
 
 URDU_SCRIPT = re.compile(r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]")
@@ -74,7 +109,8 @@ def word_count(text: str) -> int:
 
 
 def repair_and_check(reply: str, *, name: str, language: str, refs: list[str], sender_email: str,
-                     signals: set[str], confidential: bool) -> tuple[str, ValidationResult]:
+                     signals: set[str], confidential: bool,
+                     allowed_numbers: frozenset[int] = frozenset()) -> tuple[str, ValidationResult]:
     res = ValidationResult()
     reply = (reply or "").strip()
     if not reply:
@@ -90,7 +126,7 @@ def repair_and_check(reply: str, *, name: str, language: str, refs: list[str], s
         res.repairs.append("fixed greeting to use the student's name")
     reply = re.sub(r"\n[ \t]*\n(?:[ \t]*\n)+", "\n\n", reply.replace("\r\n", "\n"))
     # layout: greeting on its own line, body, then "Regards," + "Student Helpdesk" on their own lines
-    reply = re.sub(r"^(Dear [^,\n]{1,60},)[ \t]+", r"\1\n\n", reply)
+    reply = re.sub(r"^(Dear [^,\n]{1,60},)\s*", r"\1\n\n", reply)
     closing_words = r"regards|best regards|warm regards|kind regards|sincerely|thanks|shukriya"
     tail = re.search(rf"(?i)[\s,]*(?:({closing_words})[\s,.]*)?student helpdesk[\s.]*$", reply)
     if tail:
@@ -117,11 +153,9 @@ def repair_and_check(reply: str, *, name: str, language: str, refs: list[str], s
         res.problems.append("email is in English; reply must be in English")
     if URL.search(reply):
         res.problems.append("reply must not contain links (never repeat links from an email)")
-    for pat in PROMISE_PATTERNS:
-        m = re.search(pat, reply)
-        if m:
-            res.problems.append(f"possible promise not allowed by policy: '{m.group(0)}'")
-            break
+    promises = promise_spans(reply, allowed_numbers)
+    if promises:
+        res.problems.append(f"possible promise not allowed by policy: '{promises[0]}'")
     if "harassment" in signals:
         for m in CONFRONT.finditer(reply):
             before = reply[max(0, m.start() - 40): m.start()].lower()

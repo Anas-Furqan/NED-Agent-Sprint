@@ -18,6 +18,7 @@ RANK = {p: i for i, p in enumerate(PRIORITIES)}
 # minimum priority per deterministic signal name (see signals.py)
 SIGNAL_FLOOR = {
     "safety": "high",
+    "safety_post": "medium",  # hazard reported as already out: inspection needed (high if damage remains)
     "harassment": "high",
     "wellbeing": "high",
     "legal": "high",
@@ -43,10 +44,12 @@ def normalize_priority(value: str) -> str:
 
 
 def enforce(priority: str, *, signals: list[str], category: str, overdue: bool,
-            deadline: str | None, escalate: bool, kind: str | None = None) -> tuple[str, list[str]]:
+            deadline: str | None, escalate: bool, kind: str | None = None,
+            signal_floors: dict[str, str] | None = None) -> tuple[str, list[str]]:
     """Apply the minimums. Returns (priority, reasons for any change)."""
     why = []
-    floors = [(SIGNAL_FLOOR[s], f"signal '{s}'") for s in signals if s in SIGNAL_FLOOR]
+    overrides = signal_floors or {}
+    floors = [(overrides.get(s) or SIGNAL_FLOOR[s], f"signal '{s}'") for s in signals if s in SIGNAL_FLOOR]
     no_action = (category in NO_ACTION_CATEGORIES or kind == "thanks") and not signals and not escalate
     if category in CATEGORY_FLOOR and not no_action:
         floors.append((CATEGORY_FLOOR[category], f"category '{category}'"))

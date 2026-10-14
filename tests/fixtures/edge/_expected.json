@@ -360,5 +360,42 @@
    "HOSTEL-3",
    "ESC-1"
   ]
+ },
+ "X36_urdu_harass.json": {
+  "category": [
+   "harassment"
+  ],
+  "escalate": true,
+  "required_refs": [
+   "ESC-2"
+  ],
+  "priority": [
+   "high"
+  ]
+ },
+ "X37_urdu_hazard.json": {
+  "category": [
+   "hostel"
+  ],
+  "escalate": true,
+  "required_refs": [
+   "HOSTEL-3",
+   "ESC-1"
+  ],
+  "priority": [
+   "high"
+  ]
+ },
+ "X38_urdu_distress.json": {
+  "category": [
+   "wellbeing"
+  ],
+  "escalate": true,
+  "required_refs": [
+   "ESC-3"
+  ],
+  "priority": [
+   "high"
+  ]
  }
 }

@@ -115,15 +115,15 @@
   {
     "email_id": "X10_long",
     "category": "hostel",
-    "priority": "medium",
+    "priority": "low",
     "escalate": false,
     "escalation_reason": "",
     "policy_refs": [
       "HOSTEL-1"
     ],
-    "reply_draft": "Dear Long Writer,\n\nThank you for contacting us.\n\nAs per HOSTEL-1: Maintenance complaints (plumbing, electricity, furniture) are logged with the room number and resolved within 48 hours. Next step: please contact the Hostel Warden with your roll number and any relevant documents.\n\nRegards,\nStudent Helpdesk",
-    "confidence": 0.35,
-    "agent_notes": "Rule-based: keywords -> ['hostel']; rules by word overlap -> ['HOSTEL-1']. | FALLBACK (LLM unavailable: gave up after 4 attempts: invalid JSON from model: Expecting) | input: very long email (6318 words) truncated for the LLM"
+    "reply_draft": "Dear Long Writer,\n\nThank you for reaching out. Maintenance issues such as broken fans are handled by the hostel office. Please log your complaint with your room number directly with the hostel administration, as they are responsible for resolving such maintenance requests within 48 hours (HOSTEL-1).\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.9,
+    "agent_notes": "The student is reporting a standard maintenance issue. Per HOSTEL-1, these are logged with the hostel office. No escalation is required as it is a routine request. | also covers: technical | input: 699 repeated sentences collapsed before the LLM call; very long email (6318 words) shortened (truncated) for the LLM"
   },
   {
     "email_id": "X11_urdu",
@@ -438,13 +438,53 @@
     "category": "hostel",
     "priority": "high",
     "escalate": true,
-    "escalation_reason": "Electrical hazard reported (HOSTEL-3, ESC-1); route to Hostel Warden and Security.",
+    "escalation_reason": "Needs human action: post-incident safety inspection (ESC-1, HOSTEL-3); route to Hostel Warden and Security.",
     "policy_refs": [
       "HOSTEL-3",
       "ESC-1"
     ],
-    "reply_draft": "Dear Nasir Ali,\n\nThank you for reporting this. Please stay away from the affected socket in the Block B common room immediately, as it poses a significant electrical hazard (HOSTEL-3). I have escalated this report to the Hostel Warden and Security team for urgent inspection and repair (ESC-1). Please do not attempt to use the socket or any nearby equipment until you receive confirmation from the authorities that the area is safe.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Nasir Ali,\n\nThank you for reporting this. Please stay away from the damaged socket and the surrounding area until it is cleared by maintenance. As this involves an electrical hazard, I have escalated this immediately to the Hostel Warden and Security for a post-incident safety inspection (HOSTEL-3, ESC-1). Please report any further signs of smoke, sparks, or burning smells to the hostel office immediately.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The email reports a fire hazard. Per HOSTEL-3 and ESC-1, this is an immediate safety emergency requiring escalation to the Warden and Security. The student is advised to avoid the area. | also covers: security | code checks: signals: safety"
+    "agent_notes": "The student reported a past electrical fire with residual damage. Per HOSTEL-3 and ESC-1, this is a safety hazard requiring immediate escalation for inspection. I advised the student to stay away from the area. | also covers: security | code checks: signals: safety_post"
+  },
+  {
+    "email_id": "X36_urdu_harass",
+    "category": "harassment",
+    "priority": "high",
+    "escalate": true,
+    "escalation_reason": "ESC-2: Harassment and threats reported by student; route to Harassment Committee.",
+    "policy_refs": [
+      "ESC-2"
+    ],
+    "reply_draft": "Dear Fatima Zahra,\n\nآپ کی شکایت موصول ہو گئی ہے اور اسے فوری طور پر ہراسمنٹ کمیٹی کو بھیج دیا گیا ہے۔ آپ کی رازداری کا مکمل خیال رکھا جائے گا اور آپ کی تفصیلات صرف متعلقہ کمیٹی کے ساتھ شیئر کی جائیں گی۔ براہ کرم اپنی حفاظت کا خیال رکھیں اور کسی بھی ہنگامی صورتحال میں کیمپس سیکیورٹی سے رابطہ کریں۔ ہم آپ کی پریشانی کو سمجھتے ہیں اور کمیٹی اس معاملے کو دیکھے گی۔\n\nPolicy reference: ESC-2.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.92,
+    "agent_notes": "The email reports harassment and threats. Per ESC-2, this is escalated to the Harassment Committee. The reply acknowledges the request for confidentiality and provides an empathetic, non-committal response. | also covers: wellbeing | code checks: signals: harassment | language: urdu"
+  },
+  {
+    "email_id": "X37_urdu_hazard",
+    "category": "hostel",
+    "priority": "high",
+    "escalate": true,
+    "escalation_reason": "Electrical hazard reported in hostel room (HOSTEL-3, ESC-1); route to Hostel Warden and Security.",
+    "policy_refs": [
+      "HOSTEL-3",
+      "ESC-1"
+    ],
+    "reply_draft": "Dear Imran Khan,\n\nhum ne aap ki shikayat ko fori tor par Hostel Warden aur Security office ko escalate kar diya hai. Barah-e-karam us switch board se door rahen aur kisi ko bhi usay chune na den kyunke yeh aik khatarnak electrical hazard hai (HOSTEL-3). Hamari team jald az jald isay check kare gi.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The email reports a direct electrical hazard (exposed wires/shocks). Per HOSTEL-3 and ESC-1, this is an emergency requiring immediate escalation to the Warden and Security. | also covers: security | code checks: signals: safety | language: urdu"
+  },
+  {
+    "email_id": "X38_urdu_distress",
+    "category": "wellbeing",
+    "priority": "high",
+    "escalate": true,
+    "escalation_reason": "ESC-3: Student expressed feelings of hopelessness and thoughts of ending their life; route to Duty staff member.",
+    "policy_refs": [
+      "ESC-3"
+    ],
+    "reply_draft": "Dear Ahmed Ali,\n\nHum aapki pareshani ko samajhte hain aur aapki khairiyat hamare liye bohot ahem hai. Baraye meharbani foran campus clinic ya Student Counseling Cell se rabta karein taake aapko munasib madad mil sake. Hum aapke sath hain aur aap akele nahi hain.\n\nPolicy reference: ESC-3.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.92,
+    "agent_notes": "The student expressed severe distress and suicidal ideation. Per ESC-3, this is a high-priority wellbeing emergency requiring immediate escalation to a human and referral to professional support services. | code checks: signals: wellbeing | language: urdu"
   }
 ]

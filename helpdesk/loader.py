@@ -71,12 +71,27 @@ def newest_message(body: str) -> tuple[str, bool]:
     return body, False
 
 
-def truncate_words(text: str, limit: int = MAX_LLM_WORDS) -> tuple[str, bool]:
+def dedupe_repeats(text: str) -> tuple[str, int]:
+    """Drop sentences/lines that repeat earlier ones (copy-paste floods confuse the model)."""
+    parts = re.split(r"(?<=[.!?\u06d4\n])\s*", text)
+    seen, kept, removed = set(), [], 0
+    for part in parts:
+        norm = re.sub(r"\W+", " ", part).strip().lower()
+        if len(norm.split()) >= 3 and norm in seen:
+            removed += 1
+            continue
+        seen.add(norm)
+        kept.append(part)
+    return (" ".join(p.strip() for p in kept if p.strip()), removed) if removed else (text, 0)
+
+
+def truncate_words(text: str, limit: int = MAX_LLM_WORDS, tail: int = 300) -> tuple[str, int]:
+    """Keep the first `limit` and last `tail` words; returns (text, number of words cut)."""
     words = text.split()
-    if len(words) <= limit:
-        return text, False
-    head, tail = words[: int(limit * 0.8)], words[-int(limit * 0.2):]
-    return " ".join(head) + "\n[... middle of a very long email omitted ...]\n" + " ".join(tail), True
+    if len(words) <= limit + tail:
+        return text, 0
+    cut = len(words) - limit - tail
+    return " ".join(words[:limit]) + f"\n[...truncated {cut} words...]\n" + " ".join(words[-tail:]), cut
 
 
 def _normalize_received(value: str, path: Path, notes: list[str]) -> str | None:
@@ -159,7 +174,12 @@ def load_email(path: Path) -> Loaded:
     newest, cut = newest_message(email.body)
     if cut:
         notes.append("quoted earlier messages ignored; triaged the newest message")
-    llm_body, truncated = truncate_words(newest)
-    if truncated:
-        notes.append(f"very long email ({len(newest.split())} words) truncated for the LLM")
+    llm_body, repeats = dedupe_repeats(newest)
+    if repeats:
+        notes.append(f"{repeats} repeated sentences collapsed before the LLM call")
+    llm_body, cut = truncate_words(llm_body)
+    if cut:
+        notes.append(f"very long email ({len(newest.split())} words): truncated for the LLM ({cut} words cut)")
+    elif repeats and len(newest.split()) > MAX_LLM_WORDS:
+        notes.append(f"very long email ({len(newest.split())} words) shortened (truncated) for the LLM")
     return Loaded(email, "", notes, raw, newest, llm_body)

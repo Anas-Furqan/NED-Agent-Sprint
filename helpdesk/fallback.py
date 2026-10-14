@@ -10,13 +10,15 @@ import re
 from .policy import Policy
 
 CATEGORY_KEYWORDS = {
-    "fee": r"\bfees?\b|challan|voucher|refund|installment|instalment|late fee|paise|payment|\bpaid\b|withdraw|فیس|چالان|واؤچر|ووچر",
-    "hostel": r"hostel|(?<!reading )\broom\b|warden|\bmess\b|geyser|plumb|kamra|roommate|electricity|furniture|ہاسٹل|کمرہ|کمرے|میس",
-    "academic": r"transcript|\bexams?\b|attendance|\bcourse|result|re-?evaluation|re-?check|\bdean\b|grade|marks|امتحان|ٹرانسکرپٹ|حاضری|نتیجہ",
-    "technical": r"wi-?fi|\blms\b|portal (is |was )?(down|not working)|login|password|internet|account (is |says )?locked|library|network|وائی فائی|پورٹل|پاس ورڈ",
+    "fee": r"\bfees?\b|challan|voucher|refund|installment|instalment|late fee|paise|payment|\bpaid\b|withdraw|فیس|چالان|واؤچر|ووچر|جرمانہ|ریفنڈ|ادائیگی|قسط",
+    "hostel": r"hostel|(?<!reading )\broom\b|warden|\bmess\b|geyser|plumb|kamra|roommate|electricity|furniture|ہاسٹل|کمرہ|کمرے|میس|وارڈن|بجلی|پانی|\bتار\b",
+    "academic": r"transcript|\bexams?\b|attendance|\bcourse|result|re-?evaluation|re-?check|\bdean\b|grade|marks|امتحان|ٹرانسکرپٹ|حاضری|نتیجہ|کورس|ری چیکنگ",
+    "technical": r"wi-?fi|\blms\b|portal (is |was )?(down|not working)|login|password|internet|account (is |says )?locked|library|network|وائی فائی|پورٹل|پاس ورڈ|پاسورڈ|اکاؤنٹ|انٹرنیٹ|لاگ ان",
 }
 CATEGORY_SECTION = {"fee": "fee", "hostel": "hostel", "academic": "academ", "technical": "technical"}
-SIGNAL_CATEGORY = {"harassment": "harassment", "wellbeing": "wellbeing", "suspicious": "security", "safety": "hostel"}
+SIGNAL_CATEGORY = {"harassment": "harassment", "wellbeing": "wellbeing", "suspicious": "security", "safety": "hostel",
+                   "safety_post": "hostel"}
+SAFETY_SIGNALS = ("safety", "safety_post")
 OFFICE = re.compile(
     r"\b((?:[A-Z][\w']*\s){0,3}(?:Office|Department|Helpdesk|Committee|Cell|Team|Warden|Library))\b"
 )
@@ -28,6 +30,7 @@ TEXT = {
         "next": "Next step: please contact the {office} with your roll number and any relevant documents.",
         "unclear": "We could not understand your request. Could you please describe the issue in a few lines, with your roll number, so we can guide you?",
         "safety": "Please stay away from the hazard and keep others away. This has been escalated immediately ({codes}).",
+        "safety_post": "We are glad to hear it is reported as out. Please stay away from the damaged area and report any smell, sparks or smoke straight away. It has been escalated for a safety inspection ({codes}).",
         "harassment": "We are sorry you are going through this, and thank you for telling us. Your message has been passed only to the committee responsible ({codes}); your details are kept confidential.",
         "wellbeing": "If someone is in danger right now, please contact campus security and the campus clinic immediately. You can also reach the Student Counseling Cell. A staff member has been alerted ({codes}).",
         "legal": "Your concern has been forwarded to the responsible office for review ({codes}).",
@@ -43,6 +46,7 @@ TEXT = {
         "next": "Agla qadam: apna roll number aur zaroori documents ke saath {office} se rabta karein.",
         "unclear": "Hum aap ki baat samajh nahi sake. Meharbani kar ke apna masla aur roll number likh dein taake hum rehnumai kar sakein.",
         "safety": "Meharbani kar ke khatre wali jagah se door rahein. Yeh masla foran escalate kar diya gaya hai ({codes}).",
+        "safety_post": "Shukar hai ke yeh bujh chuki hai. Meharbani kar ke mutasira jagah se door rahein aur koi bu, chingari ya dhuan nazar aaye to foran batayein. Safety inspection ke liye escalate kar diya gaya hai ({codes}).",
         "harassment": "Humein afsos hai ke aap is se guzar rahi/rahe hain. Aap ka paigham sirf mutaliqa committee ko bheja gaya hai ({codes}); aap ki maloomat raaz mein rahengi.",
         "wellbeing": "Agar koi abhi khatre mein hai to foran campus security aur campus clinic se rabta karein. Student Counseling Cell se bhi rabta kar sakte hain ({codes}).",
         "legal": "Aap ki shikayat mutaliqa office ko bhej di gayi hai ({codes}).",

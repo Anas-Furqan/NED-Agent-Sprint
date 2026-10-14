@@ -29,7 +29,7 @@ from .validate import detect_language, greeting_name, repair_and_check
 log = logging.getLogger("helpdesk")
 CODE_LIKE = re.compile(r"\b([A-Za-z]+)\s*[-_ ]?\s*(\d+)\b")
 SIGNAL_PHRASE = {
-    "safety": "safety hazard", "harassment": "harassment report", "wellbeing": "medical/wellbeing concern",
+    "safety": "safety hazard", "safety_post": "post-incident safety inspection", "harassment": "harassment report", "wellbeing": "medical/wellbeing concern",
     "legal": "legal/media threat", "suspicious": "suspicious message (injection, phishing or data request)",
     "outage": "outage affecting many users", "integrity": "academic-integrity request (bribery/grade change/cheating)",
 }
@@ -53,6 +53,31 @@ class Result:
     invalid: bool = False
     cache_hit: bool = False
     llm_calls: int = 0
+
+
+def compress_for_retry(body: str, head: int = 300, tail: int = 100) -> str | None:
+    """Much shorter version of a long email for one retry after empty model output."""
+    words = body.split()
+    if len(words) <= head + tail:
+        return None
+    return " ".join(words[:head]) + f"\n[...truncated {len(words) - head - tail} words...]\n" + " ".join(words[-tail:])
+
+
+def soften_promises(reply: str, language: str = "english") -> str:
+    """Remove sentences that promise more than the policy allows; add a neutral, true statement."""
+    from .validate import promise_spans
+
+    m = re.match(r"(?s)\s*(Dear [^\n]*?,)\s*(.*)$", reply)
+    greeting, rest = (m.group(1), m.group(2)) if m else ("", reply)
+    rest = re.sub(r"(?is)\s*(regards|best regards|sincerely)?[\s,]*student helpdesk\s*$", "", rest)
+    sentences = re.split(r"(?<=[.!?\u06d4])\s+", rest.strip())
+    kept = [x for x in sentences if not promise_spans(x)]
+    if len(kept) == len(sentences):
+        return reply
+    note = ("Mutaliqa office policy ke mutabiq aap ke case ka jaiza lega." if language in ("roman_urdu", "urdu")
+            else "The responsible office will review your case according to the policy.")
+    body = " ".join(kept + [note])
+    return f"{greeting}\n\n{body}\n\nRegards,\nStudent Helpdesk" if greeting else f"{body}\n\nRegards,\nStudent Helpdesk"
 
 
 def clean_refs(raw: list[str], policy: Policy) -> tuple[list[str], list[str]]:
@@ -116,7 +141,9 @@ class TriageAgent:
         else:
             key = cache_key(loaded.raw, self.policy.text, "llm" if self.client else "offline")
             cached = self.cache.get(key) if self.client else None
-            if cached:
+            if cached and "triage" in cached:  # raw LLM answer cached: re-run every guardrail on it
+                result = self._triage(loaded, trace, cached_llm=cached, cache_key_=key)
+            elif cached and "entry" in cached:  # older cache format: the final decision itself
                 entry = OutboxEntry.model_validate({**cached["entry"], "email_id": loaded.email.id})
                 trace.data.update({k: v for k, v in cached["trace"].items() if k not in ("timestamp", "file", "email")})
                 trace.data["cache_hit"] = True
@@ -125,14 +152,13 @@ class TriageAgent:
                          entry.category, entry.priority, entry.escalate, entry.policy_refs, entry.confidence)
                 result = Result(entry, trace.data, cache_hit=True)
             else:
-                result = self._triage(loaded, trace)
-                if not result.fallback and self.client:
-                    self.cache.put(key, {"entry": result.entry.model_dump(), "trace": result.trace})
+                result = self._triage(loaded, trace, cache_key_=key)
         result.trace["duration_ms"] = int((time.perf_counter() - start) * 1000)
         result.trace["email_id"] = result.entry.email_id
         return result
 
-    def _triage(self, loaded: Loaded, tr: Trace) -> Result:
+    def _triage(self, loaded: Loaded, tr: Trace, cached_llm: dict | None = None,
+                cache_key_: str | None = None) -> Result:
         email = loaded.email
         body = loaded.newest
         text = f"{email.subject}\n{body}"
@@ -158,6 +184,10 @@ class TriageAgent:
                  f"alone): {s.name} words {s.evidence}" for s in signals]
         if confidential:
             hints.append("student explicitly asks for confidentiality")
+        if any(s.name == "safety_post" for s in strong):
+            hints.append("the hazard is reported as ALREADY OUT: acknowledge that, do not describe an active fire; "
+                         "ask them to stay away from the damaged area and report any smell/sparks/smoke; say it has "
+                         "been escalated for a post-incident safety inspection (cite the hazard rules)")
         if kind:
             hints.append(f"message looks like: {kind}")
         hints += [f"loader note: {n}" for n in notes]
@@ -165,13 +195,32 @@ class TriageAgent:
         prompt_email = email.model_dump() | {"body": loaded.llm_body or body}
         prompt = build_prompt(self.policy.text, prompt_email, name, language, hints, email.received_at)
         triage, llm_error, calls = None, "", 0
-        if self.client:
+        cached_regen = (cached_llm or {}).get("regen")
+        if cached_llm:
+            triage = LLMTriage.model_validate(cached_llm["triage"])
+            tr.data.update(model=cached_llm.get("model"), attempts=0, cache_hit=True, llm_errors=[])
+            log.info("  ⚡ cache hit  same email + policy as before: reusing the model's answer (no LLM call); "
+                     "all guardrails below run again")
+        elif self.client:
             try:
                 triage = self.client.generate(SYSTEM, prompt, LLMTriage)
             except LLMUnavailable as exc:
                 llm_error = str(exc)
-            calls += self.client.last["attempts"]
-            tr.data.update(model=self.client.last["model"], attempts=self.client.last["attempts"],
+                calls += self.client.last["attempts"]
+                short = compress_for_retry(loaded.llm_body or body)
+                if "invalid JSON" in llm_error and short:
+                    log.warning("    model returned empty/invalid output; retrying once with a shorter version")
+                    notes.append("retried with a shortened email after empty model output")
+                    retry_prompt = build_prompt(self.policy.text, email.model_dump() | {"body": short}, name,
+                                                language, hints, email.received_at)
+                    try:
+                        triage, prompt = self.client.generate(SYSTEM, retry_prompt, LLMTriage), retry_prompt
+                    except LLMUnavailable as exc2:
+                        llm_error = str(exc2)
+                    calls += self.client.last["attempts"]
+            else:
+                calls += self.client.last["attempts"]
+            tr.data.update(model=self.client.last["model"], attempts=calls,
                            llm_errors=list(self.client.last["errors"]))
             if self.client.last["repaired"]:
                 notes += self.client.last["repaired"]
@@ -256,7 +305,8 @@ class TriageAgent:
             reason_items.append(("fallback could not classify confidently; needs human review", []))
 
         # --- priority: one scheme (priority.py), code enforces minimums ---
-        priority, changes = prio.enforce(priority, signals=[s.name for s in strong], category=category,
+        priority, changes = prio.enforce(priority, signals=[s.name for s in strong],
+                                         signal_floors={s.name: s.priority for s in strong}, category=category,
                                          overdue=overdue_any, deadline=urgency[0] if urgency else None,
                                          escalate=escalate, kind=kind)
         if changes:
@@ -265,30 +315,45 @@ class TriageAgent:
         # --- reply validation (repair in code, regenerate once if needed) ---
         signal_names = {s.name for s in strong}
         check_args = dict(name=name, language=language, refs=refs, sender_email=email.from_email,
-                          signals=signal_names, confidential=confidential)
+                          signals=signal_names, confidential=confidential,
+                          allowed_numbers=frozenset(n for r in self.policy.rules.values() for n, _ in r.windows))
         reply, check = repair_and_check(triage.reply_draft, **check_args)
         problems = list(check.problems)
         if forced and not used_fallback:
             problems.append("code-level checks escalated this email (" + "; ".join(p for p, _ in reason_items)
                             + "); the reply must say it has been escalated and cite " + ", ".join(refs))
         repairs = list(check.repairs)
-        regenerated, template = False, False
-        if problems and self.client and not used_fallback:
-            log.info("  6. %-10s problems: %s -> regenerating reply once", "Validate", problems)
+        regenerated, template, new_regen = False, False, None
+        if problems and not used_fallback and (cached_regen or self.client):
+            log.info("  6. %-10s problems: %s -> regenerating reply once%s", "Validate", problems,
+                     " (cached)" if cached_regen else "")
             try:
-                fix = self.client.generate(SYSTEM, build_repair_prompt(prompt, reply, problems), LLMReply)
-                calls += self.client.last["attempts"]
-                reply2, check2 = repair_and_check(fix.reply_draft, **check_args)
+                if cached_regen:
+                    fix_text = cached_regen
+                else:
+                    if any("promise" in p for p in problems):
+                        problems.append("no promises beyond policy: only say the case has been flagged/escalated "
+                                        "and quote timelines exactly as the policy states them")
+                    fix_text = self.client.generate(SYSTEM, build_repair_prompt(prompt, reply, problems),
+                                                    LLMReply).reply_draft
+                    calls += self.client.last["attempts"]
+                    new_regen = fix_text
+                reply2, check2 = repair_and_check(fix_text, **check_args)
                 regenerated = True
                 if check2.ok:
                     reply, problems, repairs = reply2, [], repairs + check2.repairs
                 else:
-                    problems = check2.problems
+                    reply, problems = reply2, check2.problems
             except LLMUnavailable as exc:
                 calls += self.client.last["attempts"]
                 log.warning("    regeneration failed: %s", exc)
         elif problems and used_fallback:
             problems = [p for p in problems if not p.startswith("code-level")]
+        if problems and all("promise" in p for p in problems):
+            softened, soft_check = repair_and_check(soften_promises(reply, language), **check_args)
+            if soft_check.ok:
+                reply, problems = softened, []
+                repairs.append("softened a promise beyond policy")
         first_problems = list(check.problems)
         if problems:
             reply = self._template_reply(text, name, language, refs, strong, timing, category, kind)
@@ -325,7 +390,9 @@ class TriageAgent:
             office = fb.office_for(topic, self.policy) if topic else None
             if office and office != "relevant office":
                 routes = [office if r == "Responsible office" else r for r in routes]
-        reason = compose_reason(triage.escalation_reason if model_escalated else "", reason_items, routes) if escalate else ""
+        # a past hazard must not be described as active, so its reason is always composed by code
+        model_reason = "" if any(s.name == "safety_post" for s in strong) else triage.escalation_reason
+        reason = compose_reason(model_reason if model_escalated else "", reason_items, routes) if escalate else ""
         tr.data["routes"] = routes
 
         model_notes = (triage.agent_notes or "").strip()
@@ -357,7 +424,11 @@ class TriageAgent:
                 + (f" ({reason[:110]})" if escalate else "") + f" | refs={entry.policy_refs} | conf={conf:.2f}",
                 "alert" if escalate else "ok")
         log.debug("  reply_draft:\n%s\n  agent_notes: %s", entry.reply_draft, entry.agent_notes)
-        return Result(entry, tr.data, fallback=used_fallback, llm_calls=calls)
+        if self.client and cache_key_ and not used_fallback and (calls or new_regen):
+            self.cache.put(cache_key_, {"triage": triage.model_dump(), "model": tr.data.get("model"),
+                                        "regen": new_regen or cached_regen})
+        return Result(entry, tr.data, fallback=used_fallback, llm_calls=calls,
+                      cache_hit=bool(cached_llm) and calls == 0)
 
     # ---------- helpers ----------
     def _fallback_triage(self, email, text: str, name: str, language: str, signals: list[Signal],
@@ -366,8 +437,8 @@ class TriageAgent:
         clean = strip_suspicious(text)  # never act on the injected part of a message
         cats = fb.keyword_categories(clean)
         category = next((fb.SIGNAL_CATEGORY[s.name] for s in strong
-                         if s.name in fb.SIGNAL_CATEGORY and s.name != "safety"), None)
-        if not category and any(s.name == "safety" for s in strong):
+                         if s.name in fb.SIGNAL_CATEGORY and s.name not in fb.SAFETY_SIGNALS), None)
+        if not category and any(s.name in fb.SAFETY_SIGNALS for s in strong):
             # category of the topic (non-escalation) rule the hazard signal points to, e.g. a hostel rule
             sections = [self.policy.section_of(c).lower() for s in strong for c in s.codes]
             category = next((cat for sec in sections for cat, key in fb.CATEGORY_SECTION.items() if key in sec), None)
@@ -378,7 +449,7 @@ class TriageAgent:
         category = category or cats[0]
         no_topic = category in prio.NO_ACTION_CATEGORIES or (kind == "thanks" and not strong)
         topic = [] if no_topic else fb.topic_rules(clean, cats, self.policy)
-        if cats and not topic and category == cats[0] and not no_topic:
+        if cats and not topic and category == cats[0] and not no_topic and not strong:
             category = "other"  # topic words present but no policy rule matches
         sig_codes = [c for s in strong for c in s.codes]
         refs = list(dict.fromkeys(topic + sig_codes))

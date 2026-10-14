@@ -138,5 +138,17 @@
  "X35_fire_over.json": {
   "case": "Fire already out, burnt socket",
   "expected": "escalated as post-incident safety inspection"
+ },
+ "X36_urdu_harass.json": {
+  "case": "Urdu-script harassment report with confidentiality request",
+  "expected": "harassment, ESC-2, high, empathetic, no confrontation"
+ },
+ "X37_urdu_hazard.json": {
+  "case": "Urdu-script electrical hazard in hostel",
+  "expected": "hostel, HOSTEL-3 + ESC-1, high"
+ },
+ "X38_urdu_distress.json": {
+  "case": "Urdu-script hopelessness / self-harm language",
+  "expected": "wellbeing, ESC-3, high, points to clinic / Counseling Cell"
  }
 }
