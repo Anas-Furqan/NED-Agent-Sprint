@@ -66,6 +66,38 @@ def test_client_has_no_send_method():
     assert "gmail.send" not in source
 
 
+def test_draft_listing_paginates_for_reconciliation():
+    class Request:
+        def __init__(self, response):
+            self.response = response
+
+        def execute(self):
+            return self.response
+
+    class Service:
+        def __init__(self):
+            self.pages = [
+                {"drafts": [{"id": "d1"}], "nextPageToken": "next"},
+                {"drafts": [{"id": "d2"}]},
+            ]
+            self.tokens = []
+
+        def users(self):
+            return self
+
+        def drafts(self):
+            return self
+
+        def list(self, **kwargs):
+            self.tokens.append(kwargs.get("pageToken"))
+            return Request(self.pages.pop(0))
+
+    service = Service()
+    drafts = GmailClient(service).list_drafts()
+    assert [item["id"] for item in drafts] == ["d1", "d2"]
+    assert service.tokens == [None, "next"]
+
+
 def test_oauth_installed_app_flow_is_mocked(monkeypatch, tmp_path):
     from google_auth_oauthlib.flow import InstalledAppFlow
 

@@ -234,13 +234,24 @@ class GmailClient:
                 )
         return parsed
 
-    def list_drafts(self, max_results: int = 100) -> list[dict[str, Any]]:
-        response = with_retry(
-            lambda: (
-                self.service.users().drafts().list(userId="me", maxResults=max_results).execute()
+    def list_drafts(self, max_results: int = 500) -> list[dict[str, Any]]:
+        drafts: list[dict[str, Any]] = []
+        page_token: str | None = None
+        while len(drafts) < max_results:
+            size = min(100, max_results - len(drafts))
+            response = with_retry(
+                lambda size=size, page_token=page_token: (
+                    self.service.users()
+                    .drafts()
+                    .list(userId="me", maxResults=size, pageToken=page_token)
+                    .execute()
+                )
             )
-        )
-        return response.get("drafts") or []
+            drafts.extend(response.get("drafts") or [])
+            page_token = response.get("nextPageToken")
+            if not page_token:
+                break
+        return drafts[:max_results]
 
     def get_draft(self, draft_id: str) -> dict[str, Any]:
         return with_retry(

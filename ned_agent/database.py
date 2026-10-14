@@ -212,12 +212,16 @@ class Database:
             return cursor.rowcount == 1
 
     def get_message(self, message_id: int) -> dict[str, Any] | None:
-        with self.connect() as db:
+        db = self.connect()
+        try:
             row = db.execute("SELECT * FROM messages WHERE id=?", (message_id,)).fetchone()
             return dict(row) if row else None
+        finally:
+            db.close()
 
     def list_messages(self, source: str, limit: int = 500) -> list[dict[str, Any]]:
-        with self.connect() as db:
+        db = self.connect()
+        try:
             return [
                 dict(row)
                 for row in db.execute(
@@ -225,9 +229,12 @@ class Database:
                     (source, limit),
                 ).fetchall()
             ]
+        finally:
+            db.close()
 
     def list_escalations(self, source: str) -> list[dict[str, Any]]:
-        with self.connect() as db:
+        db = self.connect()
+        try:
             return [
                 dict(row)
                 for row in db.execute(
@@ -236,9 +243,12 @@ class Database:
                     (source,),
                 ).fetchall()
             ]
+        finally:
+            db.close()
 
     def list_audit(self, source: str, limit: int = 200) -> list[dict[str, Any]]:
-        with self.connect() as db:
+        db = self.connect()
+        try:
             return [
                 dict(row)
                 for row in db.execute(
@@ -246,6 +256,8 @@ class Database:
                     (source, limit),
                 ).fetchall()
             ]
+        finally:
+            db.close()
 
     def review_escalation(self, escalation_id: int, note: str) -> None:
         with self.transaction() as db:
