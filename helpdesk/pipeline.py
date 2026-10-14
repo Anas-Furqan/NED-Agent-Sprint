@@ -19,6 +19,7 @@ from . import priority as prio
 from .cache import DecisionCache, atomic_write_json, cache_key, content_hash
 from .llm import GeminiClient, LLMUnavailable
 from .loader import Loaded, is_email_file, load_email
+from .lock import FileLock, LockBusy
 from .policy import Policy
 from .prompts import SYSTEM, build_prompt, build_repair_prompt
 from .schemas import LLMReply, LLMTriage, OutboxEntry, normalize_category
@@ -627,7 +628,20 @@ class Runner:
         self.agent, self.inbox, self.out = agent, inbox, out
         self.trace_path = trace_path or trace_path_for(out)
 
-    def run(self, mode: str = "all", only: list[Path] | None = None) -> list[Result]:
+    def run(self, mode: str = "all", only: list[Path] | None = None, lock_timeout: float = 120.0) -> list[Result]:
+        """Process emails under a lock so concurrent runs (watch + dashboard) never collide."""
+        lock = FileLock(self.out.with_name(f".{self.out.stem}.lock"), timeout=lock_timeout)
+        try:
+            lock.acquire()
+        except LockBusy as exc:
+            log.warning("Another agent run is in progress (%s); skipped this run.", exc)
+            raise
+        try:
+            return self._run(mode, only)
+        finally:
+            lock.release()
+
+    def _run(self, mode: str, only: list[Path] | None) -> list[Result]:
         started = datetime.now().replace(microsecond=0)
         files, skipped = list_inbox(self.inbox)
         for p in skipped:
@@ -711,8 +725,12 @@ class Runner:
 
     def watch(self, interval: float = 3.0) -> None:
         log.info("Watching %s every %.0fs for new or changed emails (Ctrl+C to stop)", self.inbox, interval)
-        self.run("only-new")
-        seen = self._snapshot()
+        seen: dict[str, tuple[float, int]] = {}
+        try:
+            self.run("only-new", lock_timeout=interval)
+            seen = self._snapshot()
+        except LockBusy:
+            pass  # someone else is processing; the loop below catches up
         try:
             while True:
                 time.sleep(interval)
@@ -721,7 +739,10 @@ class Runner:
                 if changed or set(seen) - set(now):
                     log.info("")
                     log.info("Detected %d new/changed file(s): %s", len(changed), [p.name for p in changed])
-                    self.run("only-new")
+                    try:
+                        self.run("only-new", lock_timeout=interval)
+                    except LockBusy:
+                        continue  # keep `seen` unchanged so the files are retried next tick
                 seen = now
         except KeyboardInterrupt:
             log.info("Watch stopped.")

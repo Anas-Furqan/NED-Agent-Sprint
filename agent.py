@@ -19,6 +19,7 @@ from pathlib import Path
 from helpdesk.cache import DecisionCache
 from helpdesk.config import load_settings
 from helpdesk.llm import GeminiClient
+from helpdesk.lock import LockBusy
 from helpdesk.pipeline import Runner, TriageAgent
 from helpdesk.policy import load_policy
 
@@ -91,12 +92,15 @@ def main(argv: list[str] | None = None) -> int:
     cache = DecisionCache(args.cache_dir, read=not args.fresh, write=True)
     agent = TriageAgent(policy, client, settings.delay_seconds, cache)
     runner = Runner(agent, inbox, args.out, args.trace)
-    if args.watch:
-        runner.watch(args.interval)
-    elif args.file:
-        runner.run("file", only=[args.file])
-    else:
-        runner.run("only-new" if args.only_new else "all")
+    try:
+        if args.watch:
+            runner.watch(args.interval)
+        elif args.file:
+            runner.run("file", only=[args.file])
+        else:
+            runner.run("only-new" if args.only_new else "all")
+    except LockBusy:
+        return 3
     log.info("Full log: %s", args.log)
     return 0
 

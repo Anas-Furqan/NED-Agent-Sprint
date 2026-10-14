@@ -81,7 +81,8 @@ def _durations(sentence: str, now: datetime | None) -> list[tuple[str, float]]:
 
 
 SOON = (r"(tonight|today|tomorrow|this (evening|afternoon|week)|in (\d+|a few|two|three) hours|within "
-        r"(24|48) hours|aaj( raat)?|kal|parson|abhi|by (monday|tuesday|wednesday|thursday|friday|saturday|sunday))")
+        r"(24|48) hours|aaj( raat)?|aj|kal|kl|parson|parso|abhi|subah tak|raat tak|shaam tak|"
+        r"by (monday|tuesday|wednesday|thursday|friday|saturday|sunday))")
 ADMIN = r"(deadline|due date|due|last date|closes?|application|apply|fee|challan|voucher|form)"
 COURSE = r"(quiz|exam|test|submission|assignment|viva|presentation|lab)"
 DEADLINE_ADMIN = re.compile(rf"(?i)\b{SOON}\b[^.?!\n]{{0,40}}\b{ADMIN}\b|\b{ADMIN}\b[^.?!\n]{{0,40}}\b{SOON}\b")

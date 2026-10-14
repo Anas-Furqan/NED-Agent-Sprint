@@ -27,3 +27,4 @@ logs/
 Thumbs.db
 .cache/
 run_trace.json
+*.lock

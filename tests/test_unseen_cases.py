@@ -151,3 +151,14 @@ def test_duplicate_content_marked_regardless_of_file_order(tmp_path, names):
     out = {e["email_id"]: e for e in json.loads((tmp_path / "outbox.json").read_text(encoding="utf-8"))}
     assert "likely duplicate of X58_dup_first" in out["X58_dup_second"]["agent_notes"]
     assert "likely duplicate" not in out["X58_dup_first"]["agent_notes"]
+
+
+@pytest.mark.parametrize("text,level", [
+    ("meri fees ki due date kl tk h lekin installment mil sakti hai?", "high"),  # found while testing the Live Run page
+    ("fee ki last date aj hai", "high"), ("kl mera quiz hai aur LMS lock hai", "medium"), ("due date next month hai", None),
+])
+def test_chat_style_roman_urdu_deadlines(text, level):
+    from helpdesk.timing import deadline_urgency
+
+    got = deadline_urgency(text)
+    assert (got[0] if got else None) == level

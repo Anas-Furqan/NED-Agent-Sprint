@@ -284,7 +284,8 @@ def test_outbox_entries_valid(offline):
 
 # ---- anti-hardcoding audit ----
 def test_no_sample_specific_hardcoding():
-    samples = [json.loads(p.read_text(encoding="utf-8")) for p in (ROOT / "data" / "inbox").glob("*.json")]
+    samples = [json.loads(p.read_text(encoding="utf-8")) for p in (ROOT / "data" / "inbox").glob("*.json")
+               if not p.name.startswith("LIVE-")]  # official samples only, not dashboard test emails
     needles = {s["id"] for s in samples} | {s["from_name"] for s in samples if len(s["from_name"]) > 4} \
         | {s["subject"] for s in samples if len(s["subject"]) > 8}
     sources = [ROOT / "agent.py", ROOT / "dashboard.py", *(ROOT / "helpdesk").glob("*.py")]
