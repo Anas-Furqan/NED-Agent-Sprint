@@ -62,7 +62,7 @@ st.dataframe(
 )
 
 for _, row in view.iterrows():
-    flag = "ðŸ”´" if row["escalate"] else "ðŸŸ¢"
+    flag = "[ESCALATE]" if row["escalate"] else "[ok]"
     with st.expander(f"{flag} {row['email_id']} | {row['category']} | {row['priority']} | conf {row['confidence']:.2f}"):
         if row["escalate"]:
             st.error(f"Escalate: {row['escalation_reason']}")
