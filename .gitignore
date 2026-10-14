@@ -19,7 +19,9 @@ token*.json
 *.sqlite
 *.sqlite3
 *.db
-data/
+data/*.sqlite3
+submission/
+outbox.json.tmp
 logs/
 .DS_Store
 Thumbs.db
