@@ -22,9 +22,18 @@ from .loader import Loaded, is_email_file, load_email
 from .policy import Policy
 from .prompts import SYSTEM, build_prompt, build_repair_prompt
 from .schemas import LLMReply, LLMTriage, OutboxEntry, normalize_category
-from .signals import Signal, detect_signals, message_kind, strip_suspicious, wants_confidentiality
+from .signals import (
+    NO_REPLY_KINDS,
+    NOT_HELPDESK_KINDS,
+    Signal,
+    detect_signals,
+    is_automated,
+    message_kind,
+    strip_suspicious,
+    wants_confidentiality,
+)
 from .timing import check_overdue, deadline_urgency
-from .validate import detect_language, greeting_name, repair_and_check
+from .validate import detect_language, greeting_name, repair_and_check, unsupported_language_name
 
 log = logging.getLogger("helpdesk")
 CODE_LIKE = re.compile(r"\b([A-Za-z]+)\s*[-_ ]?\s*(\d+)\b")
@@ -173,6 +182,8 @@ class TriageAgent:
         strong = [s for s in signals if s.strong]
         weak = [s for s in signals if not s.strong]
         kind = message_kind(email.subject, body, email.from_email)
+        not_hd = kind in NOT_HELPDESK_KINDS
+        no_reply = kind in NO_REPLY_KINDS or (not_hd and is_automated(email.from_email, text))
         confidential = wants_confidentiality(body)
         tr.data["signals"] = [{"name": s.name, "strong": s.strong, "evidence": s.evidence, "codes": s.codes}
                               for s in signals]
@@ -188,8 +199,24 @@ class TriageAgent:
             hints.append("the hazard is reported as ALREADY OUT: acknowledge that, do not describe an active fire; "
                          "ask them to stay away from the damaged area and report any smell/sparks/smoke; say it has "
                          "been escalated for a post-incident safety inspection (cite the hazard rules)")
-        if kind:
+        if not_hd:
+            hints.append(f"message looks like: {NOT_HELPDESK_KINDS[kind]}; probably NOT a Student Helpdesk request "
+                         f"(use category not_helpdesk unless it clearly asks the helpdesk for help)")
+        elif kind:
             hints.append(f"message looks like: {kind}")
+        if language == "unsupported":
+            lang_name = unsupported_language_name(text)
+            notes.append(f"written in an unsupported language ({lang_name}); asked to rewrite in English or Roman Urdu")
+            hints.append(f"email is in {lang_name}, which the helpdesk does not support: reply in ENGLISH, politely ask "
+                         f"them to write in English or Roman Urdu, do not guess the content; category unclear unless "
+                         f"an emergency is unmistakable")
+        if len(re.findall(r"\w+", body)) <= 3 and not strong and language != "unsupported":  # CJK has no spaces
+            notes.append("message too short to act on: clarification requested")
+            hints.append("the message is too short to act on: ask what they need and which details (roll number...)")
+        if any(s.name == "incident" for s in strong):
+            hints.append("theft or violence: no policy rule covers it exactly; escalate as a safety/security incident, "
+                         "say it is not covered by a specific rule, and tell them to contact campus security now if "
+                         "anyone is in danger")
         hints += [f"loader note: {n}" for n in notes]
 
         prompt_email = email.model_dump() | {"body": loaded.llm_body or body}
@@ -262,16 +289,21 @@ class TriageAgent:
                 forced.append(s.name)
             escalate = True
             reason_items.append((SIGNAL_PHRASE.get(s.name, s.label), s.codes))
-            if s.name == "suspicious" and category in ("other", "unclear", "spam"):
+            if s.name == "suspicious" and category in ("other", "unclear", "not_helpdesk"):
                 category = "security"
             if s.name == "integrity" and category in ("other", "unclear"):
                 category = "academic"
         if strong:
             code_notes.append("signals: " + ", ".join(s.name for s in strong))
 
-        # message kinds that need no action (only when nothing risky was found)
-        if kind in prio.NO_ACTION_CATEGORIES and not strong and category in ("other", "unclear", "spam", "auto_reply"):
-            category = kind
+        # mail that is not a helpdesk request at all (courier notices, bank alerts, ads, recruiters...)
+        if not_hd and not strong and (category in ("other", "unclear", "not_helpdesk") or no_reply):
+            category = "not_helpdesk"
+        if category == "not_helpdesk" and not strong:
+            if refs:
+                notes.append(f"policy refs {refs} dropped: not a helpdesk request")
+            refs = []
+            code_notes.append(f"out of scope: {NOT_HELPDESK_KINDS.get(kind, 'not a Student Helpdesk request')}")
 
         # --- timing: overdue vs policy response windows ---
         timing = check_overdue(body, email.received_at, refs, self.policy)
@@ -300,7 +332,9 @@ class TriageAgent:
         tr.step(5, "Timing", " | ".join(details) or "no elapsed-time claim tied to a response window",
                 "alert" if overdue_any else "ok")
 
-        if used_fallback and category == "unclear" and not escalate and not kind:
+        too_short = any(n.startswith("message too short") for n in notes)
+        if (used_fallback and category == "unclear" and not escalate and not kind and language != "unsupported"
+                and not too_short):
             escalate = True
             reason_items.append(("fallback could not classify confidently; needs human review", []))
 
@@ -313,6 +347,10 @@ class TriageAgent:
             code_notes.append("priority " + ", ".join(changes))
 
         # --- reply validation (repair in code, regenerate once if needed) ---
+        skip_reply = category == "not_helpdesk" and no_reply and not strong and not escalate
+        if skip_reply:  # never reply substantively to automated / bulk senders
+            marker = f"No reply drafted: {NOT_HELPDESK_KINDS.get(kind, 'automated message')} unrelated to Student Helpdesk."
+            triage = triage.model_copy(update={"reply_draft": marker})
         signal_names = {s.name for s in strong}
         check_args = dict(name=name, language=language, refs=refs, sender_email=email.from_email,
                           signals=signal_names, confidential=confidential,
@@ -360,6 +398,8 @@ class TriageAgent:
             reply, _ = repair_and_check(reply, **check_args)
             repairs.append("replaced with safe template reply")
             template = True
+        if skip_reply:
+            reply, repairs = marker, ["no reply drafted for an automated / bulk message"]
         tr.data["validation"] = {"problems": first_problems + [p for p in problems if p not in first_problems],
                                  "repairs": repairs, "regenerated": regenerated, "template": template}
         tr.step(6, "Validate", ("passed" if not first_problems and not template else
@@ -379,10 +419,16 @@ class TriageAgent:
             conf = min(conf, 0.45 if category == "unclear" else 0.7)
         if used_fallback:
             conf = min(conf, 0.4)
+        if language == "unsupported":
+            conf = min(conf, 0.3)
+        if any(n.startswith("message too short") for n in notes):
+            conf = min(conf, 0.4)
         conf = round(max(0.05, min(1.0, conf)), 2)
 
         # --- reason + notes ---
         routes = self.policy.routes(refs) if escalate else []
+        if any(s.name == "incident" for s in strong):  # no exact rule: route like the policy's safety rule
+            routes += [r for r in self.policy.routes(self.policy.find_rules(["safety"], "escalation")) if r not in routes]
         if escalate and "Responsible office" in routes:
             # the office of the overdue rule, else of the first topic rule
             topic = [f.code for f in timing if f.overdue] or [
@@ -442,8 +488,10 @@ class TriageAgent:
             # category of the topic (non-escalation) rule the hazard signal points to, e.g. a hostel rule
             sections = [self.policy.section_of(c).lower() for s in strong for c in s.codes]
             category = next((cat for sec in sections for cat, key in fb.CATEGORY_SECTION.items() if key in sec), None)
-        if not category and kind in prio.NO_ACTION_CATEGORIES:
-            category = kind
+        if not category and kind in NOT_HELPDESK_KINDS:
+            category = "not_helpdesk"
+        if language == "unsupported" or len(re.findall(r"\w+", clean)) <= 4:
+            category = category or "unclear"  # cannot read it / too short: ask, do not guess
         if not category and not cats:
             category = "other" if kind == "thanks" or fb.looks_like_question(clean) else "unclear"
         category = category or cats[0]
@@ -466,9 +514,11 @@ class TriageAgent:
     def _template_reply(self, text: str, name: str, language: str, refs: list[str], strong: list[Signal],
                         timing, category: str, kind: str | None = None) -> str:
         if category in prio.NO_ACTION_CATEGORIES and not strong:
-            return fb.no_action_reply(name, language, category)
+            return fb.out_of_scope_reply(name, language)
         if kind == "thanks" and not strong:
             return fb.thanks_reply(name, language)
+        if language == "unsupported" and not strong:
+            return fb.unsupported_language_reply(name)
         clean = strip_suspicious(text)
         cats = fb.keyword_categories(clean)
         signal_codes = {c for s in strong for c in s.codes}
@@ -538,6 +588,27 @@ def trace_path_for(out: Path) -> Path:
     return out.with_name(f"{stem}.json")
 
 
+def mark_duplicate_content(ids: dict[Path, tuple[Loaded, str]]) -> None:
+    """Same subject+body sent more than once: every copy is processed, later ones are noted as likely duplicates.
+    'First' is decided by (received_at, email_id), so the result never depends on file order."""
+    groups: dict[str, list[tuple[str, str, Loaded]]] = {}
+    for loaded, eid in ids.values():
+        if loaded.email is None or loaded.problem:
+            continue
+        sig = re.sub(r"\W+", " ", f"{loaded.email.subject} {loaded.newest or loaded.email.body}").strip().lower()
+        if len(sig.split()) >= 4:
+            groups.setdefault(sig, []).append((loaded.email.received_at or "", eid, loaded))
+    for copies in groups.values():
+        if len(copies) < 2:
+            continue
+        copies.sort(key=lambda c: (c[0], c[1]))
+        first = copies[0][1]
+        for _, _eid, loaded in copies[1:]:
+            note = f"likely duplicate of {first} (same subject and body)"
+            if note not in loaded.notes:
+                loaded.notes.append(note)
+
+
 def read_json(path: Path, default):
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -565,6 +636,7 @@ class Runner:
         for path, (loaded, eid) in ids.items():
             if loaded.email and eid != loaded.email.id:
                 log.warning("Duplicate email id '%s' in %s: using '%s'", loaded.email.id, path.name, eid)
+        mark_duplicate_content(ids)
 
         trace_doc = read_json(self.trace_path, {"emails": {}, "runs": []})
         outbox = {e["email_id"]: e for e in read_json(self.out, []) if isinstance(e, dict) and "email_id" in e}

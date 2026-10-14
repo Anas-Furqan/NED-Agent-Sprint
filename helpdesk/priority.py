@@ -5,10 +5,11 @@ high   = safety hazard, harassment, medical/wellbeing, legal/media threat, suspi
          deadline (due date / last date / application deadline) within ~48 hours.
 medium = a blocked process (locked account, missing voucher), an overdue complaint, money
          (fees, refunds, installments), an academic-integrity request, or coursework deadlines.
-low    = informational questions, thank-you notes, spam, auto-replies, unclear messages.
+low    = informational questions, thank-you notes, mail that is not a helpdesk request (not_helpdesk:
+         courier/bank notifications, marketing, recruiters, circulars, auto-replies), unclear messages.
 
 The LLM proposes a priority; code enforces these minimums for deterministic signals.
-Code never lowers a priority, except for messages that need no action (spam, auto-replies).
+Code never lowers a priority, except for messages that need no action (not_helpdesk, thank-you notes).
 """
 from __future__ import annotations
 
@@ -25,9 +26,10 @@ SIGNAL_FLOOR = {
     "suspicious": "high",
     "outage": "high",
     "integrity": "medium",
+    "incident": "high",
 }
 CATEGORY_FLOOR = {"fee": "medium"}  # money
-NO_ACTION_CATEGORIES = ("spam", "auto_reply")
+NO_ACTION_CATEGORIES = ("not_helpdesk",)
 OVERDUE_FLOOR = "medium"
 ESCALATED_FLOOR = "medium"
 

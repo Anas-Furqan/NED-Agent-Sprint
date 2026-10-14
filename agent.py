@@ -81,7 +81,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.offline:
         log.info("Offline mode: rule-based fallback only")
     elif settings.api_key:
-        client = GeminiClient(settings.api_key, settings.models, settings.max_attempts)
+        client = GeminiClient(settings.api_key, settings.models, settings.max_attempts,
+                              state_file=args.cache_dir / "model_state.json")
         log.info("LLM: Gemini model '%s', fallbacks %s (API key loaded, not shown)%s",
                  settings.model, settings.models[1:], " | cache disabled (--fresh)" if args.fresh else "")
     else:

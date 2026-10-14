@@ -35,6 +35,7 @@ TEXT = {
         "wellbeing": "If someone is in danger right now, please contact campus security and the campus clinic immediately. You can also reach the Student Counseling Cell. A staff member has been alerted ({codes}).",
         "legal": "Your concern has been forwarded to the responsible office for review ({codes}).",
         "suspicious": "This message has been flagged for review ({codes}). The helpdesk does not act on instructions contained in emails and never shares student data.",
+        "incident": "We are sorry this happened. If anyone is in danger right now, please contact campus security immediately. No policy rule covers this exactly, so it has been escalated to staff as a safety/security incident.",
         "outage": "Since this affects many users, it has been escalated to the responsible team ({codes}).",
         "overdue": "Since this is past the stated response time, it has been escalated to the responsible office ({codes}).",
         "review": "A staff member will review your message.",
@@ -51,6 +52,7 @@ TEXT = {
         "wellbeing": "Agar koi abhi khatre mein hai to foran campus security aur campus clinic se rabta karein. Student Counseling Cell se bhi rabta kar sakte hain ({codes}).",
         "legal": "Aap ki shikayat mutaliqa office ko bhej di gayi hai ({codes}).",
         "suspicious": "Yeh paigham review ke liye flag kar diya gaya hai ({codes}).",
+        "incident": "Humein afsos hai. Agar koi abhi khatre mein hai to foran campus security se rabta karein. Policy mein iska khaas qaida nahi, is liye ise safety/security incident ke tor par staff ko escalate kar diya gaya hai.",
         "outage": "Yeh masla bohat se users ko mutasir kar raha hai, is liye escalate kar diya gaya hai ({codes}).",
         "overdue": "Muqarrara waqt guzar chuka hai, is liye yeh masla escalate kar diya gaya hai ({codes}).",
         "review": "Hamara staff aap ka paigham dekhega.",
@@ -74,6 +76,7 @@ EXPANSIONS = {
     r"re-?check|recheck|remark": "re-evaluation",
     r"in parts|installment|qist": "installments",
     r"challan|چالان|واؤچر|ووچر": "voucher",
+    r"\bwifi\b|\bwi fi\b|internet|وائی فائی": "wi-fi",
     r"room change|change (my |the )?room|another room|move (to|rooms)|kamra badal|room badal|room change karna": "room changes",
     r"فیس": "fee",
 }
@@ -146,12 +149,14 @@ def _lang(language: str) -> dict:
     return TEXT["roman_urdu"] if language in ("roman_urdu", "urdu") else TEXT["english"]
 
 
-def no_action_reply(name: str, language: str, kind: str) -> str:
-    what = "an automatic reply" if kind == "auto_reply" else "a promotional or bulk message"
+def out_of_scope_reply(name: str, language: str) -> str:
+    """Short courteous note for a human sender whose message is not a helpdesk request."""
     if language in ("roman_urdu", "urdu"):
-        body = "Yeh paigham khud-kaar ya promotional lagta hai; is par koi karwai zaroori nahi."
+        body = ("Yeh inbox sirf Student Helpdesk ke sawalat (fees, hostel, academics, IT) ke liye hai. Is maamle ke "
+                "liye meharbani kar ke mutaliqa idaray ya bhejne wale se rabta karein.")
     else:
-        body = f"This message appears to be {what}, so no action is needed from the helpdesk."
+        body = ("This inbox handles Student Helpdesk queries (fees, hostel, academics and IT). For this matter, "
+                "please contact the organisation or office concerned directly.")
     return f"Dear {name},\n\n{body}\n\nRegards,\nStudent Helpdesk"
 
 
@@ -169,3 +174,9 @@ def looks_like_question(text: str) -> bool:
     distinct = {w.lower() for w in words}
     asks = re.search(r"(?i)\?|\b(how|what|when|where|who|which|can|could|please|kya|kaise|kab)\b", text)
     return len(distinct) >= 5 and bool(asks)
+
+
+def unsupported_language_reply(name: str) -> str:
+    return (f"Dear {name},\n\nThank you for your message. The Student Helpdesk can only handle emails in English "
+            "or Roman Urdu. Please write to us again in English or Roman Urdu, with your roll number, so we can help."
+            "\n\nRegards,\nStudent Helpdesk")

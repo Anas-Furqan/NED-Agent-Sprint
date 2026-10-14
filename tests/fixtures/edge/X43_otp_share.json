@@ -1,0 +1,8 @@
+{
+ "id": "X43_otp_share",
+ "from_name": "Easypaisa Support",
+ "from_email": "easypaisa.verify@example.com",
+ "subject": "Account verification",
+ "body": "Your Easypaisa account will be blocked today. To keep it active, reply to this email and share your OTP and CNIC number.",
+ "received_at": "2026-10-13T09:20:00"
+}

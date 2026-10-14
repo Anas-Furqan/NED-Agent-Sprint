@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from .priority import PRIORITIES, max_priority, normalize_priority  # noqa: F401  (re-exported)
 
 CATEGORIES = ("fee", "hostel", "academic", "technical", "wellbeing", "harassment", "security",
-              "spam", "auto_reply", "unclear", "other")
+              "not_helpdesk", "unclear", "other")
 
 
 class Email(BaseModel):
@@ -109,7 +109,9 @@ def normalize_category(value: str) -> str:
                "exam": "academic", "tech": "technical", "it": "technical", "safety": "hostel",
                "medical": "wellbeing", "health": "wellbeing", "phishing": "security",
                "suspicious": "security", "legal": "other", "gibberish": "unclear",
-               "marketing": "spam", "newsletter": "spam", "autoreply": "auto_reply",
-               "auto-reply": "auto_reply", "out_of_office": "auto_reply", "bounce": "auto_reply"}
+               "spam": "not_helpdesk", "marketing": "not_helpdesk", "newsletter": "not_helpdesk",
+               "auto_reply": "not_helpdesk", "autoreply": "not_helpdesk", "auto-reply": "not_helpdesk",
+               "out_of_office": "not_helpdesk", "bounce": "not_helpdesk", "out_of_scope": "not_helpdesk",
+               "not-helpdesk": "not_helpdesk", "irrelevant": "not_helpdesk"}
     v = aliases.get(v, v)
     return v if v in CATEGORIES else "other"

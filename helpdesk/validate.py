@@ -73,8 +73,33 @@ URDU_SCRIPT = re.compile(r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF
 URL = re.compile(r"(?i)\b(?:https?://|www\.)\S+")
 
 
+URDU_ONLY = re.compile(r"[\u0679\u0688\u0691\u06ba\u06be\u06c1\u06d2\u06d3\u06cc\u06a9\u06af]")  # ٹ ڈ ڑ ں ھ ہ ے ۓ ی ک گ
+SINDHI_ONLY = re.compile(r"[\u0684\u0683\u0687\u068a\u068c\u068f\u0699\u06aa\u06bb\u067b\u067d\u067f\u067a\u0680]")
+ARABIC_ONLY = re.compile(r"[\u064a\u0643\u0629\u0649]")  # ي ك ة ى
+CJK = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]")
+
+
+def unsupported_language_name(text: str) -> str:
+    letters = [c for c in (text or "") if c.isalpha()]
+    if not letters:
+        return "unknown language"
+    if sum(1 for c in letters if CJK.match(c)) / len(letters) > 0.3:
+        return "Chinese/Japanese/Korean"
+    if sum(1 for c in letters if URDU_SCRIPT.match(c)) / len(letters) > 0.3:
+        if len(SINDHI_ONLY.findall(text)) >= 2:
+            return "Sindhi"
+        if len(ARABIC_ONLY.findall(text)) > len(URDU_ONLY.findall(text)):
+            return "Arabic"
+        return ""
+    if sum(1 for c in letters if c.isascii()) / len(letters) < 0.5:
+        return "a non-Latin script"
+    return ""
+
+
 def detect_language(text: str) -> str:
-    """english | roman_urdu | urdu (Arabic/Nastaliq script)."""
+    """english | roman_urdu | urdu (Nastaliq script) | unsupported (Arabic, Sindhi, Chinese, ...)."""
+    if unsupported_language_name(text):
+        return "unsupported"
     letters = [c for c in (text or "") if c.isalpha()]
     if letters and sum(1 for c in letters if URDU_SCRIPT.match(c)) / len(letters) > 0.3:
         return "urdu"
@@ -149,8 +174,8 @@ def repair_and_check(reply: str, *, name: str, language: str, refs: list[str], s
         res.problems.append("email is in Roman Urdu; reply must be in Roman Urdu")
     if language == "urdu" and reply_lang == "english":
         res.problems.append("email is in Urdu; reply must be in Urdu script (or Roman Urdu)")
-    if language == "english" and reply_lang != "english":
-        res.problems.append("email is in English; reply must be in English")
+    if language in ("english", "unsupported") and reply_lang != "english":
+        res.problems.append("reply must be in English")
     if URL.search(reply):
         res.problems.append("reply must not contain links (never repeat links from an email)")
     promises = promise_spans(reply, allowed_numbers)

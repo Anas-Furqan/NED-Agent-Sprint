@@ -142,7 +142,7 @@ def test_out_of_scope_is_other_and_says_so(offline):
 
 def test_no_action_messages(offline):
     entries, _ = offline
-    for eid, cat in (("X26_spam", "spam"), ("X29_autoreply", "auto_reply")):
+    for eid, cat in (("X26_spam", "not_helpdesk"), ("X29_autoreply", "not_helpdesk")):
         assert entries[eid]["category"] == cat and entries[eid]["priority"] == "low" and not entries[eid]["escalate"]
     assert entries["X28_thanks"]["priority"] == "low" and not entries["X28_thanks"]["escalate"]
     assert message_kind("", "Thanks, but what if the Warden says no?") is None
@@ -260,7 +260,7 @@ def test_only_new_merges(tmp_path):
 def test_priority_scheme_minimums():
     assert prio.enforce("low", signals=["safety"], category="hostel", overdue=False, deadline=None, escalate=True)[0] == "high"
     assert prio.enforce("low", signals=[], category="fee", overdue=False, deadline=None, escalate=False)[0] == "medium"
-    assert prio.enforce("high", signals=[], category="spam", overdue=False, deadline=None, escalate=False)[0] == "low"
+    assert prio.enforce("high", signals=[], category="not_helpdesk", overdue=False, deadline=None, escalate=False)[0] == "low"
     assert prio.enforce("low", signals=[], category="technical", overdue=False, deadline="medium", escalate=False)[0] == "medium"
 
 

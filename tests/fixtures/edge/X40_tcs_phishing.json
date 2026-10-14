@@ -1,0 +1,8 @@
+{
+ "id": "X40_tcs_phishing",
+ "from_name": "TCS Pakistan",
+ "from_email": "support@tcs-pk-delivery.example.xyz",
+ "subject": "TCS: parcel on hold",
+ "body": "Your parcel is on hold at our warehouse due to unpaid customs. Pay Rs. 150 customs fee within 24 hours at http://tcs-pk-delivery.xyz/pay or your parcel will be returned.",
+ "received_at": "2026-10-13T09:05:00"
+}

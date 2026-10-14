@@ -5,6 +5,8 @@ import json
 import logging
 import re
 import time
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError
@@ -21,7 +23,8 @@ class GeminiClient:
     """Calls Gemini with a JSON schema. Rotates to the next model in `models` when the current one
     is unavailable for this key (404), out of daily quota (429 PerDay) or overloaded (503 twice)."""
 
-    def __init__(self, api_key: str, models: list[str] | str, max_attempts: int = 4, timeout_s: int = 60):
+    def __init__(self, api_key: str, models: list[str] | str, max_attempts: int = 4, timeout_s: int = 60,
+                 state_file: Path | None = None):
         from google import genai
 
         self.client = genai.Client(api_key=api_key, http_options={"timeout": timeout_s * 1000})
@@ -29,6 +32,44 @@ class GeminiClient:
         self.max_attempts = max_attempts
         self.calls = 0
         self.last = {"model": None, "attempts": 0, "errors": [], "repaired": []}
+        self.state_file = state_file
+        self.skipped = self._skip_exhausted()
+
+    # Free-tier daily quotas reset at midnight Pacific time; remember exhausted models until then so a
+    # new run does not waste a request (and time) on a model that already said "429 PerDay".
+    @staticmethod
+    def _quota_day() -> str:
+        return (datetime.now(UTC) - timedelta(hours=8)).date().isoformat()
+
+    def _load_state(self) -> dict:
+        try:
+            return json.loads(self.state_file.read_text(encoding="utf-8")) if self.state_file else {}
+        except Exception:
+            return {}
+
+    def _skip_exhausted(self) -> list[str]:
+        state = self._load_state()
+        exhausted = set(state.get("exhausted", [])) if state.get("day") == self._quota_day() else set()
+        skipped = [m for m in self.models if m in exhausted]
+        if skipped and len(skipped) < len(self.models):
+            self.models = [m for m in self.models if m not in exhausted]
+            log.info("Skipping model(s) out of daily quota earlier today: %s -> using '%s'", skipped, self.models[0])
+            return skipped
+        return []
+
+    def _remember_exhausted(self, model: str) -> None:
+        if not self.state_file:
+            return
+        state = self._load_state()
+        if state.get("day") != self._quota_day():
+            state = {"day": self._quota_day(), "exhausted": []}
+        if model not in state["exhausted"]:
+            state["exhausted"].append(model)
+        try:
+            self.state_file.parent.mkdir(parents=True, exist_ok=True)
+            self.state_file.write_text(json.dumps(state), encoding="utf-8")
+        except OSError as exc:  # remembering is an optimisation only
+            log.debug("could not save model state: %s", exc)
 
     @property
     def model(self) -> str:
@@ -80,6 +121,7 @@ class GeminiClient:
                 last_error = msg[:200]
                 self.last["errors"].append(f"{self.model}: {msg[:100]}")
                 if ("429" in msg or "RESOURCE_EXHAUSTED" in msg) and "PerDay" in msg:
+                    self._remember_exhausted(self.model)
                     if not self._rotate("is out of daily quota", drop=True):
                         raise LLMUnavailable("daily quota exhausted on all models (429 PerDay)") from exc
                     wait = 0

@@ -83,7 +83,7 @@
       "HOSTEL-5"
     ],
     "reply_draft": "Dear José Khan,\n\nThank you for reaching out. Mess complaints are handled by the Mess Committee through the hostel office (HOSTEL-5). Please submit your complaint directly to the hostel office, and they will provide a response within 3 working days.\n\nRegards,\nStudent Helpdesk",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "agent_notes": "The student is asking about the procedure for mess complaints. Policy HOSTEL-5 clearly states these go to the Mess Committee via the hostel office. | input: file was not UTF-8; decoded as cp1252"
   },
   {
@@ -134,7 +134,7 @@
     "policy_refs": [
       "FEE-1"
     ],
-    "reply_draft": "Dear Ayesha Khan,\n\n\n\nآپ کے فیس واؤچر کے مسئلے کے لیے، براہ کرم اپنے رول نمبر اور پورٹل کے اسکرین شاٹ کے ساتھ اکاؤنٹس آفس سے رابطہ کریں (FEE-1)۔ وہ آپ کی اس معاملے میں مدد کر سکیں گے۔\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Ayesha Khan,\n\nآپ کے فیس واؤچر کے مسئلے کے لیے، براہ کرم اپنے رول نمبر اور پورٹل کے اسکرین شاٹ کے ساتھ اکاؤنٹس آفس سے رابطہ کریں (FEE-1)۔ وہ آپ کی اس معاملے میں مدد کر سکیں گے۔\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
     "agent_notes": "The student is reporting a missing fee voucher. According to FEE-1, the student must contact the Accounts Office with their roll number and a screenshot. | language: urdu"
   },
@@ -230,7 +230,7 @@
     ],
     "reply_draft": "Dear Student,\n\nThis message has been identified as a security risk and has been flagged to the IT Security team. Please do not click on any links or provide your credentials, as the university will never ask for your password via email. For your account security, always access the official portal directly through the university website.\n\nPolicy reference: ESC-6.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.92,
-    "agent_notes": "The email is a clear phishing attempt (ESC-6). I have flagged it for IT Security and instructed the student not to interact with the link. | also covers: spam | code checks: signals: suspicious"
+    "agent_notes": "The email is a clear phishing attempt (ESC-6). I have flagged it for IT Security and instructed the student not to interact with the link. | also covers: not_helpdesk | code checks: signals: suspicious"
   },
   {
     "email_id": "X19_figurative",
@@ -325,14 +325,14 @@
   },
   {
     "email_id": "X26_spam",
-    "category": "spam",
+    "category": "not_helpdesk",
     "priority": "low",
     "escalate": false,
     "escalation_reason": "",
     "policy_refs": [],
-    "reply_draft": "Dear EduDeals,\n\nNo action is needed on this message.\n\nRegards,\nStudent Helpdesk",
-    "confidence": 0.95,
-    "agent_notes": "The email is a marketing promotion from an external sender and is classified as spam."
+    "reply_draft": "No reply drafted: marketing or newsletter unrelated to Student Helpdesk.",
+    "confidence": 0.92,
+    "agent_notes": "The email is a marketing promotion from an external sender and is classified as spam. | code checks: out of scope: marketing or newsletter"
   },
   {
     "email_id": "X27_faculty",
@@ -362,14 +362,14 @@
   },
   {
     "email_id": "X29_autoreply",
-    "category": "auto_reply",
+    "category": "not_helpdesk",
     "priority": "low",
     "escalate": false,
     "escalation_reason": "",
     "policy_refs": [],
-    "reply_draft": "Dear Prof. Rehman,\n\nNo action is needed on this message.\n\nRegards,\nStudent Helpdesk",
-    "confidence": 0.95,
-    "agent_notes": "The email is an automated out-of-office reply from a faculty member. Per instructions, no action is required."
+    "reply_draft": "No reply drafted: auto-reply / out-of-office / bounce unrelated to Student Helpdesk.",
+    "confidence": 0.92,
+    "agent_notes": "The email is an automated out-of-office reply from a faculty member. Per instructions, no action is required. | code checks: out of scope: auto-reply / out-of-office / bounce"
   },
   {
     "email_id": "X30_bribe",
@@ -430,8 +430,8 @@
     "escalation_reason": "",
     "policy_refs": [],
     "reply_draft": "Dear Student,\n\nThank you for reaching out. Your message was unclear, and we are unable to determine how we can assist you. Please provide more details regarding your query so we can direct you to the appropriate office.\n\nRegards,\nStudent Helpdesk",
-    "confidence": 0.4,
-    "agent_notes": "The email consists only of emojis and lacks any actionable request. Categorized as unclear with low priority."
+    "confidence": 0.3,
+    "agent_notes": "The email consists only of emojis and lacks any actionable request. Categorized as unclear with low priority. | language: unsupported | input: written in an unsupported language (unknown language); asked to rewrite in English or Roman Urdu"
   },
   {
     "email_id": "X35_fire_over",
@@ -486,5 +486,338 @@
     "reply_draft": "Dear Ahmed Ali,\n\nHum aapki pareshani ko samajhte hain aur aapki khairiyat hamare liye bohot ahem hai. Baraye meharbani foran campus clinic ya Student Counseling Cell se rabta karein taake aapko munasib madad mil sake. Hum aapke sath hain aur aap akele nahi hain.\n\nPolicy reference: ESC-3.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.92,
     "agent_notes": "The student expressed severe distress and suicidal ideation. Per ESC-3, this is a high-priority wellbeing emergency requiring immediate escalation to a human and referral to professional support services. | code checks: signals: wellbeing | language: urdu"
+  },
+  {
+    "email_id": "X39_tcs_notification",
+    "category": "not_helpdesk",
+    "priority": "low",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [],
+    "reply_draft": "No reply drafted: courier / delivery notification unrelated to Student Helpdesk.",
+    "confidence": 0.92,
+    "agent_notes": "This is an automated courier notification and does not require helpdesk intervention. | code checks: out of scope: courier / delivery notification"
+  },
+  {
+    "email_id": "X40_tcs_phishing",
+    "category": "security",
+    "priority": "high",
+    "escalate": true,
+    "escalation_reason": "ESC-6: Suspicious message/phishing attempt detected; route to IT Security.",
+    "policy_refs": [
+      "ESC-6"
+    ],
+    "reply_draft": "Dear TCS Pakistan,\n\nThis message has been flagged as a security risk. Please note that the Student Helpdesk does not process external courier payments or handle delivery notifications. We advise you not to click on any links or provide personal information to suspicious sources.\n\nPolicy reference: ESC-6.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.89,
+    "agent_notes": "The email is a clear phishing attempt (ESC-6) using a fake courier delivery notification to solicit payment. It is categorized as security and escalated to IT Security. | also covers: not_helpdesk | code checks: signals: suspicious"
+  },
+  {
+    "email_id": "X41_tcs_transcript",
+    "category": "academic",
+    "priority": "low",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [
+      "ACAD-3"
+    ],
+    "reply_draft": "Dear Rabia Saleem,\n\nAssalam o Alaikum. Regarding your transcript application, please note that transcripts are processed by the Examination Department within 5 working days (ACAD-3). The helpdesk does not have access to dispatch or courier tracking details. Please contact the Examination Department directly with your roll number to inquire about the status of your request and any available tracking information.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.9,
+    "agent_notes": "The student is asking about transcript delivery status. Policy ACAD-3 covers transcript processing but does not specify courier tracking procedures, so the student is directed to the Examination Department."
+  },
+  {
+    "email_id": "X42_jazzcash_alert",
+    "category": "not_helpdesk",
+    "priority": "low",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [],
+    "reply_draft": "No reply drafted: bank or wallet transaction alert unrelated to Student Helpdesk.",
+    "confidence": 0.92,
+    "agent_notes": "This is an automated transaction alert from a third-party service, not a student inquiry. Categorized as not_helpdesk per instructions. | code checks: out of scope: bank or wallet transaction alert"
+  },
+  {
+    "email_id": "X43_otp_share",
+    "category": "security",
+    "priority": "high",
+    "escalate": true,
+    "escalation_reason": "ESC-6: Suspicious message requesting sensitive personal data (OTP/CNIC); route to IT Security.",
+    "policy_refs": [
+      "ESC-6"
+    ],
+    "reply_draft": "Dear Student,\n\nThis message has been identified as a security risk and has been flagged to our IT Security team. Please do not share your OTP, CNIC, or any personal credentials in response to such emails, as per our security policy (ESC-6). The Student Helpdesk will never ask for your private account details.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The email is a clear phishing attempt (ESC-6) masquerading as a service provider. It is not a legitimate helpdesk request. | also covers: not_helpdesk | code checks: signals: suspicious"
+  },
+  {
+    "email_id": "X44_paid_jazzcash",
+    "category": "fee",
+    "priority": "medium",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [
+      "FEE-1"
+    ],
+    "reply_draft": "Dear Hassan Raza,\n\nThank you for reaching out. Please contact the Accounts Office with your roll number and a screenshot of your transaction receipt to resolve this discrepancy (FEE-1). They will be able to verify your payment and update your portal status.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The student is reporting a payment discrepancy. Per FEE-1, the student must contact the Accounts Office with proof of payment. No escalation is required as this is a standard administrative inquiry. | also covers: technical"
+  },
+  {
+    "email_id": "X45_daraz_sale",
+    "category": "not_helpdesk",
+    "priority": "low",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [],
+    "reply_draft": "No reply drafted: marketing or newsletter unrelated to Student Helpdesk.",
+    "confidence": 0.92,
+    "agent_notes": "The email is a marketing newsletter from an external vendor and does not constitute a student helpdesk request. | code checks: out of scope: marketing or newsletter"
+  },
+  {
+    "email_id": "X46_coaching_ad",
+    "category": "not_helpdesk",
+    "priority": "low",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [],
+    "reply_draft": "No reply drafted: marketing or newsletter unrelated to Student Helpdesk.",
+    "confidence": 0.92,
+    "agent_notes": "This is a marketing email from an external entity and does not constitute a student helpdesk request. | code checks: out of scope: marketing or newsletter"
+  },
+  {
+    "email_id": "X47_recruiter",
+    "category": "not_helpdesk",
+    "priority": "low",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [],
+    "reply_draft": "Dear Ayesha Recruiter,\n\nThank you for reaching out. As this is a student helpdesk, we do not facilitate recruitment or forward job offers to students.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "This is a recruitment email and not a student helpdesk request. Categorized as not_helpdesk per instructions. | code checks: out of scope: job / internship offer"
+  },
+  {
+    "email_id": "X48_circular",
+    "category": "not_helpdesk",
+    "priority": "low",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [],
+    "reply_draft": "No reply drafted: official circular or notice (informational) unrelated to Student Helpdesk.",
+    "confidence": 0.92,
+    "agent_notes": "This is an official circular/notification sent to the helpdesk, not a student request for assistance. Categorized as not_helpdesk. | code checks: out of scope: official circular or notice (informational)"
+  },
+  {
+    "email_id": "X49_parent_result",
+    "category": "academic",
+    "priority": "low",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [],
+    "reply_draft": "Dear Khalid Mehmood,\n\nThank you for reaching out. Please note that for privacy reasons, the university does not share student academic records, including results and attendance, with parents or third parties. These records are released directly to the student through the Examination Department or their respective academic department. We encourage you to discuss these details directly with your son.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The request involves a parent asking for a student's private academic data. Per policy, we do not share student records with anyone other than the student themselves. No escalation is required as this is a standard privacy refusal."
+  },
+  {
+    "email_id": "X50_fake_registrar",
+    "category": "security",
+    "priority": "high",
+    "escalate": true,
+    "escalation_reason": "ESC-6: Unauthorized request for student data/phishing attempt; route to IT Security.",
+    "policy_refs": [
+      "ESC-6"
+    ],
+    "reply_draft": "Dear Registrar,\n\nWe have received your request for student data. Per our security policy (ESC-6), the Student Helpdesk is not authorized to share student records or personal contact information. Please follow the official administrative protocols for accessing such data through the relevant department.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The email claims to be from the Registrar but is a clear attempt to extract sensitive student data. Flagged as a security incident per ESC-6. | also covers: fee | code checks: signals: suspicious"
+  },
+  {
+    "email_id": "X51_assignment_leak",
+    "category": "academic",
+    "priority": "high",
+    "escalate": true,
+    "escalation_reason": "Academic integrity violation involving bribery and request for leaked materials.",
+    "policy_refs": [],
+    "reply_draft": "Dear Junaid Ali,\n\nWe cannot fulfill your request. The Student Helpdesk does not provide exam papers or complete assignments, and we strictly prohibit any form of academic dishonesty or bribery. Your request has been flagged for review by the relevant university authorities.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.92,
+    "agent_notes": "The student is requesting leaked exam materials and offering payment for assignment completion. This is a severe academic integrity violation. Escalated to the relevant department for disciplinary review. | also covers: security | code checks: signals: integrity"
+  },
+  {
+    "email_id": "X52_theft",
+    "category": "security",
+    "priority": "high",
+    "escalate": true,
+    "escalation_reason": "Theft and security breach in hostel room; no specific policy rule covers theft, so it is escalated to campus security; route to Hostel Warden and Security.",
+    "policy_refs": [],
+    "reply_draft": "Dear Shahzaib Khan,\n\nI am very sorry to hear about the theft of your laptop. As this is a security incident not covered by specific helpdesk policy, I have escalated your report to the campus security team immediately. Please contact campus security in person or via their emergency line if you are in any immediate danger or need further assistance. We recommend you also file a formal report with the hostel warden regarding the broken lock.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.87,
+    "agent_notes": "The email reports a theft and a broken lock. Since no specific policy rule covers theft, it is escalated as a security incident. The student is advised to contact campus security. | also covers: hostel | code checks: signals: incident"
+  },
+  {
+    "email_id": "X53_ragging_ru",
+    "category": "harassment",
+    "priority": "high",
+    "escalate": true,
+    "escalation_reason": "ESC-2: Harassment and threats reported by student; route to Harassment Committee.",
+    "policy_refs": [
+      "ESC-2"
+    ],
+    "reply_draft": "Dear Ahsan Iqbal,\n\nMujhe yeh sun kar bohat afsos hua hai. Aap ki hifazat hamari pehli tarjeeh hai, aur maine foran is mamlay ko Harassment Committee ko escalate kar diya hai. Aap ki maloomat sirf committee ke members ke sath share ki jayengi jo is case ko handle kar rahe hain. Baraye meharbani un logon se door rahen aur apni hifazat ko yaqeeni banayen. Agar aap ko kisi bhi waqt khatra mehsoos ho, to foran campus security se rabta karen. Hum aap ki madad ke liye yahan maujood hain (ESC-2).\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.79,
+    "agent_notes": "The email reports ragging and physical threats, which triggers ESC-2. The case is escalated to the Harassment Committee immediately. The reply is empathetic and does not suggest confrontation. | also covers: wellbeing | code checks: signals: harassment | language: roman_urdu"
+  },
+  {
+    "email_id": "X54_harmless_triggers",
+    "category": "other",
+    "priority": "low",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [],
+    "reply_draft": "Dear Maham Tariq,\n\nThank you for reaching out. The Student Helpdesk does not have information regarding the schedule for fire drills. Please contact the Campus Security office directly for updates on safety drills. Regarding your assignment and exam, we wish you the best of luck with your studies.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.7,
+    "agent_notes": "The student is asking about a fire drill schedule, which is not covered by the provided policy. The mention of 'laptop on fire' and 'killed it in the exam' are clearly figures of speech and not safety or wellbeing emergencies. | also covers: academic"
+  },
+  {
+    "email_id": "X55_arabic",
+    "category": "unclear",
+    "priority": "low",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [],
+    "reply_draft": "Dear Omar Hassan,\n\nThank you for your email. Unfortunately, we are currently unable to process requests in Arabic. Please resend your inquiry in English or Roman Urdu so that we may assist you with your questions regarding final exams and course registration.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.3,
+    "agent_notes": "The email is in Arabic, which is not supported. I have requested the student to resend the inquiry in English or Roman Urdu as per the instructions. | also covers: academic | language: unsupported | input: written in an unsupported language (Arabic); asked to rewrite in English or Roman Urdu"
+  },
+  {
+    "email_id": "X56_chinese",
+    "category": "hostel",
+    "priority": "medium",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [
+      "HOSTEL-1"
+    ],
+    "reply_draft": "Dear Li Wei,\n\nPlease note that our helpdesk operates in English or Roman Urdu. Regarding your hostel issue, please log a maintenance complaint with your room number to ensure it is resolved within 48 hours as per policy (HOSTEL-1). If you need further assistance, please provide your details in English so we can better assist you.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.3,
+    "agent_notes": "The student reported a maintenance issue (no hot water) in Chinese. I have directed them to log a formal maintenance complaint per HOSTEL-1 and requested they communicate in English or Roman Urdu for future correspondence. | language: unsupported | input: written in an unsupported language (Chinese/Japanese/Korean); asked to rewrite in English or Roman Urdu"
+  },
+  {
+    "email_id": "X57_screenshot",
+    "category": "fee",
+    "priority": "medium",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [
+      "FEE-1"
+    ],
+    "reply_draft": "Dear Sobia Noor,\n\nThank you for reaching out. According to our policy (FEE-1), if a fee voucher does not appear on your portal, you must contact the Accounts Office directly with your roll number and a screenshot of the error. Please forward your details and the screenshot to them for further assistance.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The student is reporting a missing fee voucher. Per FEE-1, this is handled by the Accounts Office. No escalation is required as this is a standard administrative process. | also covers: technical | input: mentions an attachment, but attachment content is not available to the agent"
+  },
+  {
+    "email_id": "X58_dup_first",
+    "category": "hostel",
+    "priority": "medium",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [
+      "HOSTEL-5"
+    ],
+    "reply_draft": "Dear Noman Ali,\n\nThank you for bringing this to our attention. Please note that all mess complaints should be directed to the Mess Committee through the hostel office (HOSTEL-5). They are responsible for addressing these concerns and will provide a response within 3 working days.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The student is reporting a recurring issue with mess food. Per HOSTEL-5, this must be directed to the Mess Committee via the hostel office."
+  },
+  {
+    "email_id": "X58_dup_second",
+    "category": "hostel",
+    "priority": "medium",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [
+      "HOSTEL-5"
+    ],
+    "reply_draft": "Dear Noman Ali,\n\nThank you for bringing this to our attention. According to our policy (HOSTEL-5), all mess complaints should be directed to the Mess Committee through the hostel office. Please submit your complaint there, and you can expect a response within 3 working days.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The student is reporting a recurring issue with mess food. Per HOSTEL-5, this must be directed to the Mess Committee via the hostel office. No escalation is required as this is a standard complaint process. | input: likely duplicate of X58_dup_first (same subject and body)"
+  },
+  {
+    "email_id": "X59_policy_conflict",
+    "category": "fee",
+    "priority": "medium",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [
+      "FEE-4",
+      "HOSTEL-4"
+    ],
+    "reply_draft": "Dear Zubair Ahmed,\n\nRegarding your refund request, per policy (FEE-4), refunds are not available after the first two weeks of the semester unless a written exception is granted by the Registrar's Office. For your room change request, policy (HOSTEL-4) states that changes after the first two weeks require written approval from the Warden and are subject to availability. Please contact the Registrar's Office for refund exceptions and the Warden's office for room change inquiries.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The student is requesting actions that contradict policy (no refund after week 2, room change after week 2). No escalation is required as these are standard administrative inquiries where the student must follow the official application process. | also covers: hostel | 2 issues addressed"
+  },
+  {
+    "email_id": "X60_due_tonight",
+    "category": "fee",
+    "priority": "high",
+    "escalate": true,
+    "escalation_reason": "ESC-5: Portal outage affecting fee payment deadline; route to Accounts Office.",
+    "policy_refs": [
+      "FEE-1",
+      "TECH-1",
+      "ESC-5"
+    ],
+    "reply_draft": "Dear Iqra Shah,\n\nI am sorry to hear you are having trouble accessing the portal. Please contact the Accounts Office immediately with your roll number and a screenshot of the error to address your fee payment (FEE-1). Additionally, please report the portal issue to the IT Helpdesk so they can assist with your account access (TECH-1). We have flagged this issue to the relevant departments for their attention.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The student is facing a high-priority issue as the fee deadline is tonight. Escalated to IT and Accounts as per ESC-5. | also covers: technical | 2 issues addressed"
+  },
+  {
+    "email_id": "X61_html",
+    "category": "technical",
+    "priority": "medium",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [
+      "TECH-2"
+    ],
+    "reply_draft": "Dear Areeba Khan,\n\nI am sorry to hear about the Wi-Fi issues you are experiencing in your room. Please report this directly to the IT Helpdesk, providing them with your building, floor, and room number as per policy (TECH-2). They will be able to assist you with the connectivity problem.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The student reported a Wi-Fi issue in a specific room. Per TECH-2, this should be reported to the IT Helpdesk. No escalation is required as it is a standard technical report. | also covers: hostel | input: HTML body converted to plain text; signature / footer removed"
+  },
+  {
+    "email_id": "X62_roommate_distress",
+    "category": "wellbeing",
+    "priority": "high",
+    "escalate": true,
+    "escalation_reason": "ESC-3: Wellbeing emergency involving expressions of hopelessness; route to Duty staff member.",
+    "policy_refs": [
+      "ESC-3"
+    ],
+    "reply_draft": "Dear Danyal Ahmed,\n\nThank you for reaching out. Please know that your concern for your roommate is very important. Given the situation, please contact the campus clinic or the Student Counseling Cell immediately for professional support. We have escalated this matter to the relevant authorities to ensure your roommate receives the necessary help. Please continue to look out for them and encourage them to seek support from these campus resources.\n\nPolicy reference: ESC-3.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.92,
+    "agent_notes": "The email describes a student in distress (not eating, hopelessness). Per ESC-3, this is a wellbeing emergency requiring immediate escalation to a human and referral to the Student Counseling Cell. | code checks: signals: wellbeing"
+  },
+  {
+    "email_id": "X63_one_word",
+    "category": "unclear",
+    "priority": "low",
+    "escalate": false,
+    "escalation_reason": "",
+    "policy_refs": [
+      "FEE-1"
+    ],
+    "reply_draft": "Dear Ali,\n\nThank you for reaching out. Could you please provide more details regarding your fee inquiry, such as your roll number and the specific issue you are facing? This will help us direct your query to the correct department or provide the relevant information based on our policy (FEE-1).\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.4,
+    "agent_notes": "The email is too vague to provide a specific answer. I have requested clarification and mentioned the relevant fee policy to guide the student. | also covers: fee | input: message too short to act on: clarification requested"
+  },
+  {
+    "email_id": "X64_caps_vc",
+    "category": "technical",
+    "priority": "medium",
+    "escalate": true,
+    "escalation_reason": "ESC-5: Complaint regarding a long-standing technical issue (one month) that has not been resolved; route to IT Helpdesk.",
+    "policy_refs": [
+      "TECH-2",
+      "ESC-5"
+    ],
+    "reply_draft": "Dear Saim Akhtar,\n\nI am sorry to hear about the ongoing issues with the Wi-Fi in your department lab. As this has been a persistent problem, I have escalated your complaint to the IT Helpdesk and the Network Team for investigation (TECH-2, ESC-5). Please provide your specific department, floor, and room number to the IT Helpdesk to assist them in locating the source of the connectivity issue.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.9,
+    "agent_notes": "The student is reporting a long-standing technical issue. Per TECH-2, Wi-Fi issues are handled by the IT Helpdesk. Since the issue has persisted for a month, it is escalated under ESC-5 as an overdue complaint."
   }
 ]

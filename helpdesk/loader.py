@@ -4,6 +4,7 @@ Never raises. Every assumption it makes is recorded in `notes` so it shows up in
 """
 from __future__ import annotations
 
+import html
 import json
 import re
 from dataclasses import dataclass, field
@@ -61,6 +62,31 @@ def parse_text_email(text: str) -> dict:
         name = sender
     return {"from_name": name, "from_email": addr, "subject": data.get("subject", ""),
             "body": body, "received_at": data.get("date", "")}
+
+
+HTML_HINT = re.compile(r"(?i)<(html|body|div|p|br|table|span|font|b|i|a)\b[^>]*>")
+SIGNATURE = re.compile(r"(?im)^[ \t]*(--\s*$|sent from my \w+|get outlook for \w+|this email and any attachments? (is|are) "
+                       r"confidential)")
+ATTACHMENT = re.compile(r"(?i)\b(attached|attachment|screenshot|find attached|pfa|see the (image|picture|photo))\b")
+
+
+def html_to_text(body: str) -> tuple[str, bool]:
+    """Convert an HTML body to plain text (never rendered)."""
+    if not HTML_HINT.search(body):
+        return body, False
+    text = re.sub(r"(?is)<(script|style|head)\b.*?</\1>", " ", body)
+    text = re.sub(r"(?i)<br\s*/?>|</p>|</div>|</li>|</tr>|<p\b[^>]*>", "\n", text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html.unescape(text)
+    text = re.sub(r"[ \t\u00a0]+", " ", text)
+    return re.sub(r"\n\s*\n+", "\n\n", text).strip(), True
+
+
+def strip_signature(body: str) -> tuple[str, bool]:
+    m = SIGNATURE.search(body)
+    if m and body[: m.start()].strip():
+        return body[: m.start()].strip(), True
+    return body, False
 
 
 def newest_message(body: str) -> tuple[str, bool]:
@@ -171,9 +197,18 @@ def load_email(path: Path) -> Loaded:
         else:
             return Loaded(email, "email body is empty", notes, raw)
 
+    body, was_html = html_to_text(email.body)
+    if was_html:
+        notes.append("HTML body converted to plain text")
+        email = email.model_copy(update={"body": body})
     newest, cut = newest_message(email.body)
     if cut:
         notes.append("quoted earlier messages ignored; triaged the newest message")
+    newest, sig = strip_signature(newest)
+    if sig:
+        notes.append("signature / footer removed")
+    if ATTACHMENT.search(newest):
+        notes.append("mentions an attachment, but attachment content is not available to the agent")
     llm_body, repeats = dedupe_repeats(newest)
     if repeats:
         notes.append(f"{repeats} repeated sentences collapsed before the LLM call")

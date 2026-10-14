@@ -59,7 +59,8 @@ SPECS: list[SignalSpec] = [
             r"harass", r"\bstalk", r"(keeps?|kept|keep on) (following|messaging|texting|calling|sending|touching)",
             r"following me", r"threaten(ed|ing|s)? (me|to (hurt|kill|beat|harm))", r"\bbull(y|ied|ying)\b",
             r"blackmail", r"touch(ed|es)? me", r"(scared|afraid) (to come|of him|of her|of them|to go)",
-            r"tang kar", r"p[ei]e?cha kar", r"dhamki", r"ghoorta|ghurta",
+            r"tang kar", r"p[ei]e?cha kar", r"dhamki", r"ghoorta|ghurta", r"\bragg?ing\b",
+            r"seniors?\b[^.\n]{0,40}\b(tang|pareshan|maar|zaleel|beizzat)", r"fresher(s|on)? ko (tang|maar|pareshan)",
             r"ہراساں", r"ہراسگی", r"پیچھا", r"دھمکی", r"تنگ کر",
         ],
         weak=[r"\bscared\b", r"uncomfortable", r"\bthreat", r"\bdarr?\b"],
@@ -76,6 +77,9 @@ SPECS: list[SignalSpec] = [
             r"(don'?t|do not) want to (live|be alive|exist)", r"better off without me", r"can'?t go on",
             r"hopeless", r"self[- ]harm", r"hurt myself", r"panic attack", r"overdose", r"behosh",
             r"jeena nahi", r"zinda nahi rehna", r"marna chaht[ai]", r"mar jana chaht[ai]", r"mar jaun",
+            r"(hasn'?t|has not|not|nahi|nahin) (eaten|kha(ya|i|ta|ti))[^.\n]{0,20}\b(days|din)\b",
+            r"\b(says|said|keeps saying|feels?|kehta|kehti) (that )?(nothing matters|kuch matter nahi)",
+            r"wants? to disappear",
             r"khudkushi", r"zindagi (se )?tang", r"jeene ka (koi )?(faida|maqsad) nahi", r"khud ko nuqsan",
             r"مایوس", r"زندگی ختم", r"خودکشی", r"بیہوش", r"جینے کا کوئی فائدہ",
         ],
@@ -105,7 +109,8 @@ SPECS: list[SignalSpec] = [
             r"ignore (all |any |the |your )?(previous |prior |above |earlier )?(instructions|rules|prompts?)",
             r"you are now", r"(admin|developer|god|dan) mode", r"jailbreak", r"system prompt",
             r"(send|give|share|forward|list|provide)[^.]{0,40}(list of|all|every|other)[^.]{0,30}"
-            r"(students?|users?)'?s?[^.]{0,20}(emails?|address\w*|phone|numbers?|data|details|records|passwords?)",
+            r"(students?|users?)'?s?[^.]{0,20}(emails?|address\w*|phone|numbers?|data|details|records|passwords?|"
+            r"defaults?|defaulters|fee status|results|marks|cnic)",
             r"(email address\w*|phone numbers?|contact details|personal data|cnic)[^.]{0,30}(of|for) "
             r"(all|every|other) students?",
             r"mark (every|all)[^.]{0,40}(resolved|closed|approved)", r"(verify|confirm) your (account|password|credentials)",
@@ -113,17 +118,36 @@ SPECS: list[SignalSpec] = [
             r"\bdisregard (all|the|previous|your)", r"override (your|the|all)",
             r"(marks|grades|result|phone number|address|contact|cnic|roll number) of (my |a )?"
             r"(friend|classmate|another student|other students)",
-            r"\b(send|give|share|tell|provide|forward)( me)?\b[^.\n]{0,30}\b\w+'s (roll (no|number)|result|marks|"
+            r"\b(send|give|share|tell|provide|forward)( me)?\b[^.\n]{0,30}"
+            r"\b(?!(?:son|daughter|child|ward|brother|sister|kid|nephew|niece)'s)\w+'s (roll (no|number)|result|marks|"
             r"grades|phone|number|address|email|cnic|details|transcript|attendance)",
             r"\b\w+ (ka|ki) (roll (no|number)|result|marks|phone number|number|address) (bhej|bata|de)",
             r"(?m)^\s*\[?(system|assistant|developer)\]?\s*:", r"<\|?(system|im_start)",
             r"(manager|admin\w*|director|dean|registrar|head of \w+|supervisor|principal|chairperson)[^.\n]{0,30}"
             r"\b(said|told|asked|instructed|authori[sz]ed)\b[^.\n]{0,40}\bto (approve|waive|grant|refund|release|mark)",
             r"new instructions?:", r"act as (an? )?(admin|administrator|developer)",
+            r"(share|send|tell|provide|reply with|give)[^.\n]{0,25}\b(otp|pin|one[- ]time (password|code)|"
+            r"verification code|cvv)\b",
+            r"\bI am (the )?(registrar|vc|vice chancellor|dean|director|controller|chairperson|principal|"
+            r"administrator)\b[^\n]{0,80}\b(send|share|forward|provide|give)\b",
         ],
-        weak=[r"action required", r"click (here|this link)", r"\bpassword\b", r"\binstructions?\b"],
+        weak=[r"action required", r"click (here|this link)", r"\bpassword\b", r"\binstructions?\b",
+              r"\b(son|daughter|child|ward)'s (result|marks|attendance|grades|transcript)",
+              r"\bI am (the )?(registrar|vc|dean|director|controller|chairperson|principal)\b"],
         rule_keywords=["phishing"],
         rule_section="escalation",
+    ),
+    SignalSpec(
+        name="incident",
+        label="safety/security incident (theft or violence) not covered by a specific policy rule",
+        strong=[
+            r"\b(stolen|stole|theft|robbed|robbery|burglar\w*|break-?in|broke into|chori|chura (liya|li))\b",
+            r"\b(fight|fighting|brawl|assault(ed)?|attacked|punched|beat (me|him|her|us|up)|beaten|hit me|"
+            r"maar peet|larai|jhagra|mara peeta)\b",
+        ],
+        weak=[r"\bmissing\b", r"\bweapon\b"],
+        rule_keywords=[],
+        rule_section=None,
     ),
     SignalSpec(
         name="integrity",
@@ -173,8 +197,13 @@ def _find(patterns: list[str], text: str, check_negation: bool) -> list[str]:
     return hits
 
 
+JOKE = re.compile(r"(?i)\b(lol|lmao|haha+|jk|literally|metaphorically)\b|\U0001F602|\U0001F923|\U0001F525")
+REAL_FIRE = re.compile(r"(?i)smoke|spark|caught fire|burn(ing|t)|short ?circuit|flames|extinguish")
 URL = re.compile(r"(?i)\b(?:https?://|www\.)\S+")
 PHISH_WORDS = re.compile(r"(?i)password|log ?in|sign ?in|verify|credential|otp|\bpin\b|suspend|confirm your|account will")
+PAY_WORDS = re.compile(r"(?i)\bpay\b|payment|customs|charges|\bfee\b|card details|bank details|rs\.? ?\d")
+URGENCY = re.compile(r"(?i)on hold|suspend|blocked|within \d+ (hours|days)|immediately|last chance|failure to|"
+                     r"will be (returned|cancelled|closed)|expires?")
 BASE64 = re.compile(r"[A-Za-z0-9+/]{24,}={0,2}")
 FIGURATIVE = re.compile(r"(?i)\b(exams?|quiz\w*|assignments?|papers?|course|subject|homework|deadlines?|"
                         r"semester|class(es)?|teacher|lab|viva|project|result|marks|grades?|fail(ing)?)\b")
@@ -220,13 +249,15 @@ def detect_signals(subject: str, body: str, policy: Policy, from_name: str = "")
                 signals.append(Signal(spec.name, spec.label, True, [many.group(0), outage.group(0)], codes, spec.priority))
             continue
         strong = _find(spec.strong, text, check_negation=True)
+        if spec.name == "safety" and strong and JOKE.search(text) and not REAL_FIRE.search(text):
+            strong = []  # "my laptop is literally on fire with this assignment lol": figurative
         if spec.name == "wellbeing":
             # "this exam is killing me" is figurative: keep it as a hint, let the model judge
             strong = [h for h in strong if not (FIGURATIVE_ONLY.search(h) and FIGURATIVE.search(text))]
         if spec.name == "suspicious":
             if hidden and _find(spec.strong + [r"approve|waive|instruction"], hidden, check_negation=False):
                 strong.append("base64-encoded instruction")
-            if URL.search(text) and PHISH_WORDS.search(text):
+            if URL.search(text) and (PHISH_WORDS.search(text) or (PAY_WORDS.search(text) and URGENCY.search(text))):
                 strong.append("link asking for login/password details")
         if strong and spec.name == "safety":
             over, residual = post_incident(text)
@@ -251,24 +282,62 @@ def strip_suspicious(text: str) -> str:
     return " ".join(s for s in sentences if not _find(spec.strong, s, check_negation=False))
 
 
+FIRST_PERSON = re.compile(r"(?i)\b(i|my|me|mine|mera|meri|mere|mujhe|main|hum|hamara)\b")
+AUTOMATED_SENDER = re.compile(r"(?i)(no-?reply|do-?not-?reply|notifications?|alerts?|mailer|newsletter|marketing|"
+                              r"info|updates?|postmaster|bounce)[^@]*@")
 KINDS = {
+    "delivery": re.compile(r"(?i)\b(shipment|parcel|consignment|cn ?#|cn no|tracking (no|number|id)|out for delivery|"
+                           r"has been (delivered|dispatched|shipped)|delivery (attempt|scheduled|status))\b"),
+    "bank_alert": re.compile(r"(?i)\b(jazzcash|easypaisa|hbl|ubl|mcb|meezan|alfalah|allied bank|raast)\b[^.\n]{0,80}"
+                             r"\b(debited|credited|received|sent|transferred|transaction|otp)\b|\btransaction (id|alert)|"
+                             r"available balance|\byour otp\b|one[- ]time (password|pin)"),
+    "recruiter": re.compile(r"(?i)\b(job (offer|opening|opportunit\w+)|internship (opportunit\w+|offer|program)|we are hiring|"
+                            r"hiring for|your (profile|cv|resume)|position of|apply now)\b"),
+    "circular": re.compile(r"(?i)\b(notification no|office order|circular|notice)\b[^\n]{0,200}\b(hereby|all students|"
+                           r"all concerned|will remain closed|holiday|is notified)\b"),
     "auto_reply": re.compile(r"(?i)out of (the )?office|auto(matic|mated)?[- ]?reply|undeliverable|delivery "
                              r"(status notification|has failed|failure)|mailer-daemon|postmaster|i am currently away|"
                              r"will be back on|returning to the office"),
-    "spam": re.compile(r"(?i)unsubscribe|newsletter|\d+% off|discount|limited[- ]time offer|buy now|you have won|"
-                       r"promo code|special offer|sponsored|click here to (claim|win)"),
+    "marketing": re.compile(r"(?i)unsubscribe|newsletter|\d+% off|discount|limited[- ]time offer|buy now|you have won|"
+                            r"promo code|special offer|sponsored|click here to (claim|win)|\bsale\b.{0,30}\b(now|live|today)|"
+                            r"admissions? open|enrol+ now|coaching (academy|centre|center)"),
     "thanks": re.compile(r"(?i)^\W*(thanks|thank you|shukriya|jazakallah)|issue (is |has been )?(resolved|fixed|sorted)|"
                          r"problem (is |has been )?(solved|resolved|fixed)|no longer need"),
 }
 
 
+# kinds that are not Student Helpdesk requests at all, and the ones that never get a reply
+NOT_HELPDESK_KINDS = {"auto_reply": "auto-reply / out-of-office / bounce", "marketing": "marketing or newsletter",
+                      "delivery": "courier / delivery notification", "bank_alert": "bank or wallet transaction alert",
+                      "recruiter": "job / internship offer", "circular": "official circular or notice (informational)"}
+NO_REPLY_KINDS = {"auto_reply", "marketing", "delivery", "bank_alert", "circular"}
+
+
+def is_automated(from_email: str, text: str = "") -> bool:
+    return bool(AUTOMATED_SENDER.search(from_email or "")) or bool(
+        re.search(r"(?i)this is an? (automated|auto-generated|system generated) (message|email|notification)|"
+                  r"do not reply to this (email|message)", text))
+
+
 def message_kind(subject: str, body: str, from_email: str = "") -> str | None:
-    """Messages that need no real action. Only a hint: never escalates, never hides risk signals."""
+    """What sort of message this is when it is not a normal request. Only a hint plus no-reply handling:
+    it never escalates and never hides risk signals. Context matters: a student writing in the first person
+    about a parcel or a JazzCash payment is asking for help, not sending a notification."""
     text = f"{subject}\n{body}"
-    if KINDS["auto_reply"].search(text) or re.search(r"(?i)mailer-daemon|postmaster|no-?reply@", from_email or ""):
+    automated = is_automated(from_email, text)
+    asks = bool(FIRST_PERSON.search(body)) and not automated
+    if KINDS["auto_reply"].search(text) or re.search(r"(?i)mailer-daemon|postmaster", from_email or ""):
         return "auto_reply"
-    if KINDS["spam"].search(text):
-        return "spam"
+    for kind in ("delivery", "bank_alert"):
+        if KINDS[kind].search(text) and (automated or not asks):
+            return kind
+    if KINDS["marketing"].search(text) and not asks:
+        return "marketing"
+    if KINDS["recruiter"].search(text) and (automated or re.search(r"(?i)\b(your|you)\b", body)) and not re.search(
+            r"(?i)\bI (got|have|received|need)\b", body):
+        return "recruiter"
+    if KINDS["circular"].search(text) and not asks:
+        return "circular"
     if KINDS["thanks"].search(body.strip()) and len(body.split()) < 60 and "?" not in body:
         return "thanks"
     return None

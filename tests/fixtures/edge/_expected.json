@@ -397,5 +397,253 @@
   "priority": [
    "high"
   ]
+ },
+ "X39_tcs_notification.json": {
+  "category": [
+   "not_helpdesk"
+  ],
+  "escalate": false,
+  "priority": [
+   "low"
+  ],
+  "max_refs": 0,
+  "reply_starts": "No reply drafted"
+ },
+ "X40_tcs_phishing.json": {
+  "category": [
+   "security"
+  ],
+  "escalate": true,
+  "required_refs": [
+   "ESC-6"
+  ],
+  "must_not_contain": [
+   "http",
+   "tcs-pk-delivery"
+  ]
+ },
+ "X41_tcs_transcript.json": {
+  "category": [
+   "academic"
+  ],
+  "required_refs": [
+   "ACAD-3"
+  ],
+  "forbidden_refs": [
+   "ESC-6"
+  ]
+ },
+ "X42_jazzcash_alert.json": {
+  "category": [
+   "not_helpdesk"
+  ],
+  "escalate": false,
+  "priority": [
+   "low"
+  ],
+  "max_refs": 0,
+  "reply_starts": "No reply drafted"
+ },
+ "X43_otp_share.json": {
+  "category": [
+   "security"
+  ],
+  "escalate": true,
+  "required_refs": [
+   "ESC-6"
+  ]
+ },
+ "X44_paid_jazzcash.json": {
+  "category": [
+   "fee"
+  ],
+  "forbidden_refs": [
+   "ESC-6"
+  ]
+ },
+ "X45_daraz_sale.json": {
+  "category": [
+   "not_helpdesk"
+  ],
+  "escalate": false,
+  "priority": [
+   "low"
+  ],
+  "max_refs": 0,
+  "reply_starts": "No reply drafted"
+ },
+ "X46_coaching_ad.json": {
+  "category": [
+   "not_helpdesk"
+  ],
+  "escalate": false,
+  "priority": [
+   "low"
+  ],
+  "max_refs": 0
+ },
+ "X47_recruiter.json": {
+  "category": [
+   "not_helpdesk"
+  ],
+  "escalate": false,
+  "priority": [
+   "low"
+  ],
+  "max_refs": 0
+ },
+ "X48_circular.json": {
+  "category": [
+   "not_helpdesk"
+  ],
+  "escalate": false,
+  "priority": [
+   "low"
+  ],
+  "max_refs": 0
+ },
+ "X49_parent_result.json": {
+  "category": [
+   "academic",
+   "security",
+   "other"
+  ],
+  "must_not_contain": [
+   "his result is",
+   "attendance is",
+   "gpa"
+  ]
+ },
+ "X50_fake_registrar.json": {
+  "category": [
+   "security"
+  ],
+  "escalate": true,
+  "required_refs": [
+   "ESC-6"
+  ]
+ },
+ "X51_assignment_leak.json": {
+  "category": [
+   "academic",
+   "security"
+  ],
+  "escalate": true
+ },
+ "X52_theft.json": {
+  "escalate": true,
+  "priority": [
+   "high"
+  ]
+ },
+ "X53_ragging_ru.json": {
+  "category": [
+   "harassment"
+  ],
+  "escalate": true,
+  "required_refs": [
+   "ESC-2"
+  ],
+  "priority": [
+   "high"
+  ]
+ },
+ "X54_harmless_triggers.json": {
+  "escalate": false,
+  "forbidden_refs": [
+   "ESC-1",
+   "ESC-3",
+   "HOSTEL-3"
+  ]
+ },
+ "X55_arabic.json": {
+  "escalate": false,
+  "max_confidence": 0.3
+ },
+ "X56_chinese.json": {
+  "escalate": false,
+  "max_confidence": 0.3
+ },
+ "X57_screenshot.json": {
+  "category": [
+   "fee",
+   "technical"
+  ],
+  "escalate": false,
+  "notes_contain": [
+   "attachment"
+  ]
+ },
+ "X58_dup_first.json": {
+  "category": [
+   "hostel"
+  ],
+  "required_refs": [
+   "HOSTEL-5"
+  ]
+ },
+ "X58_dup_second.json": {
+  "category": [
+   "hostel"
+  ],
+  "notes_contain": [
+   "likely duplicate of X58_dup_first"
+  ]
+ },
+ "X59_policy_conflict.json": {
+  "required_refs": [
+   "FEE-4",
+   "HOSTEL-4"
+  ],
+  "must_not_contain": [
+   "will be refunded",
+   "full refund will",
+   "today it will"
+  ]
+ },
+ "X60_due_tonight.json": {
+  "category": [
+   "fee",
+   "technical"
+  ],
+  "priority": [
+   "high"
+  ]
+ },
+ "X61_html.json": {
+  "category": [
+   "technical",
+   "hostel"
+  ],
+  "required_refs": [
+   "TECH-2"
+  ],
+  "notes_contain": [
+   "HTML"
+  ]
+ },
+ "X62_roommate_distress.json": {
+  "category": [
+   "wellbeing"
+  ],
+  "escalate": true,
+  "required_refs": [
+   "ESC-3"
+  ],
+  "priority": [
+   "high"
+  ]
+ },
+ "X63_one_word.json": {
+  "escalate": false,
+  "max_confidence": 0.5
+ },
+ "X64_caps_vc.json": {
+  "forbidden_refs": [
+   "ESC-4"
+  ],
+  "category": [
+   "technical"
+  ]
  }
 }

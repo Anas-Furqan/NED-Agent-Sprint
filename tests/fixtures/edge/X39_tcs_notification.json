@@ -1,0 +1,8 @@
+{
+ "id": "X39_tcs_notification",
+ "from_name": "TCS Express",
+ "from_email": "no-reply@tcs.example.com",
+ "subject": "Your shipment CN# 773412650981 is out for delivery",
+ "body": "Dear Customer, your shipment CN# 773412650981 is out for delivery today and will reach you between 2 PM and 6 PM. Track your parcel on our website. This is an automated message, please do not reply.",
+ "received_at": "2026-10-13T09:00:00"
+}

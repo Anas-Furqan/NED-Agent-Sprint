@@ -1,0 +1,8 @@
+{
+ "id": "X42_jazzcash_alert",
+ "from_name": "JazzCash",
+ "from_email": "alerts@jazzcash.example.com",
+ "subject": "Transaction alert",
+ "body": "Rs. 2,500 has been sent from your JazzCash account to 0300XXXX123. Transaction ID 98234117. Available balance Rs. 1,240. If this was not you, call our helpline.",
+ "received_at": "2026-10-13T09:15:00"
+}

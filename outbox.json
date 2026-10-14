@@ -10,7 +10,7 @@
     ],
     "reply_draft": "Dear Hamza Qureshi,\n\nThank you for reaching out. According to our policy (FEE-2), the helpdesk cannot waive late fees. Late fee waivers can only be approved by the Accounts Office upon submission of a written application with proof of the reason for the delay. Please visit the Accounts Office with your roll number and the payment receipt to submit your application for review.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The student is requesting a fee waiver. Per FEE-2, the helpdesk cannot waive fees and the student must apply to the Accounts Office. No escalation is required as this is a standard administrative procedure."
+    "agent_notes": "The student is requesting a fee waiver. Per FEE-2, the helpdesk cannot waive fees and the student must apply to the Accounts Office. No escalation is required as this is a standard administrative procedure. | input: mentions an attachment, but attachment content is not available to the agent"
   },
   {
     "email_id": "E002",
@@ -104,7 +104,7 @@
     ],
     "reply_draft": "Dear Usman Khalid,\n\nWe are sorry to hear about your illness. Regarding your attendance shortage, please note that according to policy (ACAD-2), attendance requirements can be condoned with a medical certificate submitted to your Department within 7 days of the absence ending. The Department Chairperson will make the final decision. Please submit your medical certificate and a formal request to your Department office as soon as possible for their review.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The student has a valid medical reason for attendance shortage. Per ACAD-2, this must be handled by the Department Chairperson. No escalation is required as the student is instructed to follow the standard procedure."
+    "agent_notes": "The student has a valid medical reason for attendance shortage. Per ACAD-2, this must be handled by the Department Chairperson. No escalation is required as the student is instructed to follow the standard procedure. | input: mentions an attachment, but attachment content is not available to the agent"
   },
   {
     "email_id": "E009",
@@ -197,7 +197,7 @@
     ],
     "reply_draft": "Dear Student,\n\nThis message has been flagged as a security risk. We do not comply with requests to bypass system protocols or share student data. Please be advised that all official communications regarding your account will come from verified university channels.\n\nPolicy reference: ESC-6.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.92,
-    "agent_notes": "The email contains clear prompt injection and phishing indicators (requesting student data, instructing the agent to ignore previous rules). It is flagged as a security threat per ESC-6. | also covers: spam | code checks: signals: suspicious"
+    "agent_notes": "The email contains clear prompt injection and phishing indicators (requesting student data, instructing the agent to ignore previous rules). It is flagged as a security threat per ESC-6. | also covers: not_helpdesk | code checks: signals: suspicious"
   },
   {
     "email_id": "E016",

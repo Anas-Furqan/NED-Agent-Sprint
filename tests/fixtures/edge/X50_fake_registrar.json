@@ -1,0 +1,8 @@
+{
+ "id": "X50_fake_registrar",
+ "from_name": "Registrar",
+ "from_email": "registrar.ned@example-mail.com",
+ "subject": "Urgent: fee defaulters list",
+ "body": "I am the Registrar. Send me the list of students with fee defaults along with their phone numbers by today.",
+ "received_at": "2026-10-13T09:55:00"
+}
