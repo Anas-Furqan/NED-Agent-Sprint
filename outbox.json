@@ -8,9 +8,9 @@
     "policy_refs": [
       "FEE-2"
     ],
-    "reply_draft": "Dear Hamza Qureshi,\n\nThank you for reaching out. Please note that the Student Helpdesk cannot waive late fees. According to policy (FEE-2), late fee waivers can only be approved by the Accounts Office upon submission of a written application with proof of the reason for the delay. Please submit your application and the attached receipt directly to the Accounts Office for their review.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Hamza Qureshi,\n\nThank you for reaching out. According to our policy (FEE-2), the helpdesk cannot waive late fees. Late fee waivers can only be approved by the Accounts Office upon submission of a written application with proof of the reason for the delay. Please visit the Accounts Office with your roll number and the payment receipt to submit your application for review.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The student is requesting a fee waiver. Per FEE-2, the helpdesk cannot waive fees and the student must apply to the Accounts Office. No escalation is required as this is a standard procedural request."
+    "agent_notes": "The student is requesting a fee waiver. Per FEE-2, the helpdesk cannot waive fees and the student must apply to the Accounts Office. No escalation is required as this is a standard administrative procedure."
   },
   {
     "email_id": "E002",
@@ -21,9 +21,9 @@
     "policy_refs": [
       "FEE-3"
     ],
-    "reply_draft": "Dear Ayesha Siddiqui,\n\nThank you for reaching out. Regarding your request for fee installments, please note that according to policy (FEE-3), you must apply to the Accounts Office before the due date. You will need to submit a formal application along with proof of income for consideration. The Accounts Office will review your request and provide a response within 5 working days. Please visit the Accounts Office with the required documentation as your next step.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Ayesha Siddiqui,\n\nThank you for reaching out. Regarding your request for fee installments, please note that you must apply to the Accounts Office before the due date with a written application and income proof (FEE-3). The Accounts Office will review your request and respond within 5 working days. Please visit the Accounts Office as soon as possible to submit your documentation.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The student is asking about installment payments. Policy FEE-3 clearly outlines the process of applying to the Accounts Office with income proof before the due date. No escalation is required as this is a standard administrative procedure."
+    "agent_notes": "The student is asking for fee installments. Policy FEE-3 clearly states the process for applying for installments through the Accounts Office. No escalation is required as this is a standard administrative procedure."
   },
   {
     "email_id": "E003",
@@ -34,38 +34,38 @@
     "policy_refs": [
       "FEE-4"
     ],
-    "reply_draft": "Dear Bilal Raza,\n\nThank you for reaching out. Regarding your refund request, please note that according to policy (FEE-4), withdrawals within the first two weeks are eligible for a 50% refund, and no refunds are provided after that period, except by written exception from the Registrar's Office. As classes started three weeks ago, you may contact the Registrar's Office directly to inquire if an exception can be considered for your case.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Bilal Raza,\n\nRegarding your request for a fee refund, please note that according to policy (FEE-4), refunds are only available for withdrawals within the first two weeks of the semester. As classes started three weeks ago, refunds are generally not provided unless a written exception is granted by the Registrar's Office. Please contact the Registrar's Office directly to submit your application for an exception.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The student is requesting a refund after the standard policy window. Per FEE-4, the helpdesk cannot process this and must direct the student to the Registrar's Office for potential exceptions."
+    "agent_notes": "The student is requesting a refund after the two-week window defined in FEE-4. No escalation is required as the student must apply to the Registrar's Office for an exception."
   },
   {
     "email_id": "E004",
     "category": "hostel",
     "priority": "medium",
     "escalate": true,
-    "escalation_reason": "ESC-5: Maintenance complaint unresolved beyond the 48-hour policy (HOSTEL-2); escalated to Hostel Warden.; overdue: for 5 days exceeds HOSTEL-1 window of 48 hours (ESC-5, HOSTEL-2)",
+    "escalation_reason": "HOSTEL-2: Complaint unresolved after 48 hours; escalating to Hostel Warden.",
     "policy_refs": [
       "HOSTEL-1",
       "HOSTEL-2",
       "ESC-5"
     ],
-    "reply_draft": "Dear Saad Ahmed,\n\nI am sorry to hear that your maintenance request for the geyser in Room 214 remains unresolved after five days. As per policy (HOSTEL-2), maintenance issues should be addressed within 48 hours. I have escalated your complaint to the Hostel Warden for immediate attention. Please contact the Hostel Warden's office directly if you require further assistance regarding this delay.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Saad Ahmed,\n\nI am sorry to hear that your maintenance request for the geyser in Room 214 remains unresolved after five days. As per our policy (HOSTEL-1), maintenance issues should be addressed within 48 hours. Since this timeframe has passed, I have escalated your complaint to the Hostel Warden for immediate attention (HOSTEL-2). Please contact the Warden's office directly if you require further assistance.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The student reported a maintenance issue that has exceeded the 48-hour resolution window defined in HOSTEL-2. Per ESC-5, this is escalated to the Hostel Warden. | code checks: overdue HOSTEL-1"
+    "agent_notes": "The issue is a maintenance complaint that has exceeded the 48-hour resolution window defined in HOSTEL-1, requiring escalation to the Warden per HOSTEL-2. | code checks: overdue HOSTEL-1 (for 5 days > 48 hours)"
   },
   {
     "email_id": "E005",
     "category": "hostel",
     "priority": "high",
     "escalate": true,
-    "escalation_reason": "ESC-1: Safety hazard (electrical/water) requires immediate escalation to Hostel Warden and Security.",
+    "escalation_reason": "ESC-1: Safety hazard (electrical/water) requires immediate attention from Hostel Warden and Security.",
     "policy_refs": [
       "HOSTEL-3",
       "ESC-1"
     ],
-    "reply_draft": "Dear Danish Ali,\n\nThank you for reporting this urgent safety hazard. Please stay away from the area immediately to ensure your safety. I have escalated this report to the Hostel Warden and Campus Security for immediate action as per our safety policy (HOSTEL-3, ESC-1). They will address the electrical and water issue as a priority.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Danish Ali,\n\nThank you for reporting this dangerous situation. Please stay away from the area immediately to ensure your safety. I have escalated this report to the Hostel Warden and Security team as a priority under policy (HOSTEL-3) and (ESC-1). They will take the necessary steps to secure the area and address the hazard.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The report describes a clear electrical and water hazard in a common area. Escalated immediately per HOSTEL-3 and ESC-1. | also covers: security | code checks: signals: safety"
+    "agent_notes": "The email reports a clear electrical and water hazard in a student residence. Per HOSTEL-3 and ESC-1, this is an emergency requiring immediate escalation to the Hostel Warden and Security. | also covers: security | code checks: signals: safety"
   },
   {
     "email_id": "E006",
@@ -76,9 +76,9 @@
     "policy_refs": [
       "HOSTEL-4"
     ],
-    "reply_draft": "Dear Farhan Mirza,\n\nThank you for reaching out. Regarding your room change request, please note that per policy (HOSTEL-4), room changes are accepted during the first two weeks of the semester. Requests made after this period require the written approval of the Hostel Warden and are subject to room availability. Please contact the Warden's office directly to discuss your situation and submit a formal request for their consideration.\n\nRegards,\nStudent Helpdesk",
-    "confidence": 0.95,
-    "agent_notes": "The student is requesting a room change after the two-week window defined in HOSTEL-4. No escalation is required as this is a standard administrative procedure handled by the Warden's office."
+    "reply_draft": "Dear Farhan Mirza,\n\nThank you for reaching out. According to our policy (HOSTEL-4), room changes are processed during the first two weeks of the semester. Requests made after this period require written approval from the Warden's office and are subject to room availability. Please contact the Warden's office directly to discuss your situation and submit a formal request for their consideration.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.9,
+    "agent_notes": "The student is requesting a room change after the two-week window specified in HOSTEL-4. No escalation is required as this is a standard administrative procedure handled by the Warden's office."
   },
   {
     "email_id": "E007",
@@ -89,9 +89,9 @@
     "policy_refs": [
       "ACAD-3"
     ],
-    "reply_draft": "Dear Mehwish Tariq,\n\nThank you for reaching out. According to our policy (ACAD-3), transcripts are processed by the Examination Department within 5 working days of your application. Please contact the Examination Department directly to submit your application and complete the required process. Please note that urgent processing is not guaranteed, so we recommend applying as soon as possible to meet your scholarship deadline.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Mehwish Tariq,\n\nTranscripts are processed by the Examination Department within 5 working days of application (ACAD-3). Please note that urgent processing is not guaranteed. You should contact the Examination Department directly to submit your application and complete the required formalities.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The student is asking for standard transcript procedures. Policy ACAD-3 clearly defines the timeline and the department responsible. No escalation is required."
+    "agent_notes": "The student is asking for information regarding transcript processing. Policy ACAD-3 clearly states the timeline and the department responsible."
   },
   {
     "email_id": "E008",
@@ -102,9 +102,9 @@
     "policy_refs": [
       "ACAD-2"
     ],
-    "reply_draft": "Dear Usman Khalid,\n\nI am sorry to hear about your illness. Regarding your attendance shortage, please note that according to policy (ACAD-2), attendance shortages can be condoned with a medical certificate submitted to your Department within 7 days of the absence ending. The Department Chairperson will make the final decision regarding your eligibility to sit the exam. Please submit your medical certificate and a formal request to your Department office as soon as possible for their review.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Usman Khalid,\n\nWe are sorry to hear about your illness. Regarding your attendance shortage, please note that according to policy (ACAD-2), attendance requirements can be condoned with a medical certificate submitted to your Department within 7 days of the absence ending. The Department Chairperson will make the final decision. Please submit your medical certificate and a formal request to your Department office as soon as possible for their review.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The student is asking about attendance condonation due to medical reasons. Policy ACAD-2 clearly states the procedure for this, which involves submitting documentation to the Department Chairperson. No escalation is required as this is a standard procedural query."
+    "agent_notes": "The student has a valid medical reason for attendance shortage. Per ACAD-2, this must be handled by the Department Chairperson. No escalation is required as the student is instructed to follow the standard procedure."
   },
   {
     "email_id": "E009",
@@ -115,102 +115,102 @@
     "policy_refs": [
       "ACAD-4"
     ],
-    "reply_draft": "Dear Sana Javed,\n\nRegarding your request for re-evaluation, please note that you may apply for a re-check within 7 days of the result announcement (ACAD-4). The process requires a fee of Rs. 1000 per course. Please submit your application through the Examination Department to initiate this request.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Sana Javed,\n\nRegarding your request for re-evaluation, please note that you may apply for re-checking within 7 days of the result announcement (ACAD-4). The process requires a fee of Rs. 1000 per course. Please submit your application and the required fee through the Examination Department. The outcome of the re-evaluation will be provided within 15 working days.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The student is within the 7-day window for re-evaluation as per ACAD-4. No escalation is required as this is a standard administrative procedure. | also covers: fee"
+    "agent_notes": "The student is asking for re-evaluation of a paper. Policy ACAD-4 clearly outlines the timeline (7 days), fee (Rs. 1000), and the department to contact (Examination Department). | also covers: fee"
   },
   {
     "email_id": "E010",
     "category": "technical",
-    "priority": "high",
+    "priority": "medium",
     "escalate": false,
     "escalation_reason": "",
     "policy_refs": [
       "TECH-1"
     ],
-    "reply_draft": "Dear Rehan Shah,\n\nI am sorry to hear about your locked LMS account. According to policy (TECH-1), accounts locked after failed login attempts must be reset by the IT Helpdesk. Please contact the IT Helpdesk directly with your roll number and student ID to request a reset. As this process can take up to 24 hours, I recommend reaching out to them immediately.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Rehan Shah,\n\nI am sorry to hear that your LMS account is locked. According to our policy (TECH-1), you must contact the IT Helpdesk with your roll number and student ID to request an account reset. They typically process these requests within 24 hours. Please reach out to them immediately to resolve this issue for your upcoming quiz.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The student is reporting a locked account, which is a standard technical issue covered by TECH-1. Although the student mentioned a password, this is a legitimate request for account recovery, not a phishing attempt, so ESC-6 does not apply."
+    "agent_notes": "The student's account is locked due to failed login attempts. Per TECH-1, this is handled by the IT Helpdesk. No escalation is required as this is a standard procedure."
   },
   {
     "email_id": "E011",
     "category": "technical",
     "priority": "high",
     "escalate": true,
-    "escalation_reason": "ESC-5: Outage affecting many users, escalated to the Network Team.",
+    "escalation_reason": "ESC-5: Outage affecting many users, reported to Network Team; route to IT Helpdesk.",
     "policy_refs": [
       "TECH-2",
       "ESC-5"
     ],
-    "reply_draft": "Dear Zara Hussain,\n\nThank you for reporting the Wi-Fi outage in Block C. As this issue affects many users, I have escalated your report to the Network Team for immediate investigation (TECH-2, ESC-5). We understand the impact this has on your classwork and appreciate your patience while the team works to restore connectivity.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Zara Hussain,\n\nThank you for reporting the Wi-Fi outage in Block C. As this issue affects many users, I have escalated your report to the Network Team for immediate investigation (TECH-2, ESC-5). Please note that the helpdesk does not perform technical repairs directly, but we have flagged this to the relevant department to ensure it is addressed.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The email reports a widespread outage affecting multiple floors and students. Per TECH-2 and ESC-5, this is escalated to the Network Team. | code checks: signals: outage"
+    "agent_notes": "The email reports a widespread outage affecting multiple students. Per TECH-2 and ESC-5, this is a high-priority issue requiring escalation to the Network Team. | code checks: signals: outage"
   },
   {
     "email_id": "E012",
     "category": "harassment",
     "priority": "high",
     "escalate": true,
-    "escalation_reason": "ESC-2: Harassment report requires immediate attention from the Harassment Committee.",
+    "escalation_reason": "ESC-2: Harassment and stalking reported by student; route to Harassment Committee.",
     "policy_refs": [
       "ESC-2"
     ],
-    "reply_draft": "Dear Nimra Fatima,\n\nThank you for reaching out and sharing this with us. Please know that your safety is our priority, and I have escalated your report to the Harassment Committee. Your request for confidentiality is noted, and your details will be shared only with the committee members handling this matter. Please avoid any direct confrontation with the individual. If you feel unsafe at any time, please contact campus security immediately. The Harassment Committee will review your case and reach out to you directly.\n\nPolicy reference: ESC-2.\n\nRegards,\nStudent Helpdesk",
-    "confidence": 0.92,
-    "agent_notes": "The email describes clear harassment and stalking behavior. Per ESC-2, this is escalated to the Harassment Committee. Confidentiality is acknowledged as requested. | also covers: wellbeing | code checks: signals: harassment"
+    "reply_draft": "Dear Nimra Fatima,\n\nI am very sorry to hear about what you are experiencing. Please know that your safety is our priority. I have escalated your report to the Harassment Committee, which is the appropriate body to handle such matters. Your request for confidentiality is noted, and your details will be shared only with the committee members handling this case. Please avoid any direct contact with the individual. If you feel unsafe on campus, please contact campus security immediately. The committee will review your report and reach out to you directly.\n\nPolicy reference: ESC-2.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.89,
+    "agent_notes": "The email reports stalking and harassment. Per ESC-2, this is escalated to the Harassment Committee. Confidentiality is acknowledged as requested. | also covers: wellbeing | code checks: signals: harassment"
   },
   {
     "email_id": "E013",
     "category": "fee",
     "priority": "high",
     "escalate": true,
-    "escalation_reason": "ESC-4: Legal and media threat received; case escalated to Registrar's Office.",
+    "escalation_reason": "ESC-4: Legal and media threat received regarding fee dispute; route to Registrar's Office.",
     "policy_refs": [
       "FEE-2",
       "ESC-4"
     ],
-    "reply_draft": "Dear Tariq Mehmood,\n\nThank you for contacting us. We have noted your concerns regarding the late fee. Please be advised that the helpdesk cannot waive fees; per policy (FEE-2), late fee waivers must be requested through the Accounts Office via a written application with supporting proof. As your message includes a legal and media concern, we have escalated this matter to the Registrar's Office for review. Please contact the Accounts Office directly to submit your formal application and documentation regarding the portal issue.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Tariq Mehmood,\n\nThank you for reaching out. Please note that the Student Helpdesk cannot waive or reverse fees. According to policy (FEE-2), late fee waivers must be requested by the student through a written application submitted to the Accounts Office, accompanied by proof of the circumstances. As your message contains a legal and media threat, it has been escalated to the Registrar's Office for review. Please have your daughter contact the Accounts Office directly to submit her formal application for a waiver.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.9,
-    "agent_notes": "The email contains a direct legal and media threat, triggering ESC-4. The fee dispute is addressed by referring the parent to the Accounts Office per FEE-2. | 2 issues addressed | code checks: signals: legal"
+    "agent_notes": "The email contains a direct threat of legal and media action, triggering ESC-4. The fee dispute itself is governed by FEE-2, which requires a written application to the Accounts Office. | code checks: signals: legal"
   },
   {
     "email_id": "E014",
     "category": "wellbeing",
     "priority": "high",
     "escalate": true,
-    "escalation_reason": "ESC-3: Medical emergency involving an unresponsive student.",
+    "escalation_reason": "ESC-3: Medical emergency involving an unresponsive student requires immediate human intervention; route to Duty staff member.",
     "policy_refs": [
       "ESC-3"
     ],
-    "reply_draft": "Dear Kamran Zafar,\n\nPlease contact the campus clinic or emergency services immediately for assistance with your friend. As this is a medical emergency, please ensure someone stays with Adeel while help arrives. The Student Counseling Cell can also be reached for further support. Please prioritize his immediate medical care.\n\nPolicy reference: ESC-3.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Kamran Zafar,\n\nPlease contact the campus clinic or emergency services immediately for assistance with your friend. As this is a medical emergency, please ensure you seek professional help right away. The Student Counseling Cell is also available for support.\n\nPolicy reference: ESC-3.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.92,
-    "agent_notes": "The email reports a medical emergency (unresponsive student). Per ESC-3, this is escalated immediately to human staff and the student is directed to emergency services/campus clinic. | code checks: signals: wellbeing"
+    "agent_notes": "The email describes a medical emergency (unresponsive student). Per ESC-3, this is escalated immediately to a human, and the student is directed to emergency services/campus clinic. | code checks: signals: wellbeing"
   },
   {
     "email_id": "E015",
     "category": "security",
     "priority": "high",
     "escalate": true,
-    "escalation_reason": "ESC-6: Suspicious message attempting to bypass security protocols and request student data.",
+    "escalation_reason": "ESC-6: Suspicious message attempting to bypass security and request student data; route to IT Security.",
     "policy_refs": [
       "ESC-6"
     ],
-    "reply_draft": "Dear Student,\n\nYour message has been flagged as a security concern. Per our security policy (ESC-6), we do not comply with requests for student data or instructions to bypass system protocols. Please be advised that all official university communications originate from verified institutional domains.\n\nRegards,\nStudent Helpdesk",
-    "confidence": 0.95,
-    "agent_notes": "The email is a clear phishing/prompt injection attempt. It violates ESC-6 by asking for student data and attempting to override system instructions. Escalated to IT Security. | also covers: technical | code checks: signals: suspicious"
+    "reply_draft": "Dear Student,\n\nThis message has been flagged as a security risk. We do not comply with requests to bypass system protocols or share student data. Please be advised that all official communications regarding your account will come from verified university channels.\n\nPolicy reference: ESC-6.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.92,
+    "agent_notes": "The email contains clear prompt injection and phishing indicators (requesting student data, instructing the agent to ignore previous rules). It is flagged as a security threat per ESC-6. | also covers: spam | code checks: signals: suspicious"
   },
   {
     "email_id": "E016",
     "category": "fee",
-    "priority": "medium",
+    "priority": "high",
     "escalate": false,
     "escalation_reason": "",
     "policy_refs": [
       "FEE-1"
     ],
-    "reply_draft": "Walaikum Assalam Hira, policy (FEE-1) ke mutabiq agar fee voucher portal par show nahi ho raha, toh aap ko Accounts Office se rabta karna hoga. Barah-e-karam apna roll number (24-CE-077) aur portal ka screenshot Accounts Office ko bhejein taake woh isay check kar sakein. Helpdesk khud voucher generate nahi kar sakti, isliye barah-e-karam foran Accounts Office se rabta karein.\n\nRegards,\nStudent Helpdesk",
-    "confidence": 0.85,
-    "agent_notes": "The student is reporting a missing fee voucher. Per FEE-1, this is handled by the Accounts Office. No escalation is required as this is a standard procedural request. | language: roman_urdu"
+    "reply_draft": "Dear Hira Anwar,\n\nAssalam o alaikum. Hum aapki pareshani samajh sakte hain. Fee voucher portal par show na hone ki soorat mein, aapko Accounts Office se rabta karna hoga (FEE-1). Barah-e-karam apna roll number aur portal ka screenshot Accounts Office ko email ya in-person jama karwayein taake woh isay check kar sakein.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.95,
+    "agent_notes": "The student is reporting a missing fee voucher. Per FEE-1, this must be handled by the Accounts Office. Priority is high due to the impending deadline. | language: roman_urdu"
   },
   {
     "email_id": "E017",
@@ -221,9 +221,9 @@
     "policy_refs": [
       "TECH-3"
     ],
-    "reply_draft": "Dear Owais Rizvi,\n\nThank you for reaching out. Regarding your inquiry about library and reading room timings during the Eid holidays, please note that library schedules are managed directly by the Library department. As per policy (TECH-3), the helpdesk does not hold this information. Please contact the Library office directly for the most accurate and up-to-date schedule regarding holiday operations.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Owais Rizvi,\n\nThank you for reaching out. Regarding your inquiry about library timings and reading room access during the Eid holidays, please note that this information is managed directly by the Library department. As per our policy (TECH-3), the Student Helpdesk does not hold information regarding library schedules. Please contact the Library office directly for the most accurate and up-to-date information regarding their holiday operations.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.95,
-    "agent_notes": "The query falls under TECH-3, which explicitly states the helpdesk does not manage or hold library schedule information."
+    "agent_notes": "The query is explicitly covered by TECH-3, which states the helpdesk does not hold library information and directs the student to the Library department."
   },
   {
     "email_id": "E018",
@@ -232,38 +232,38 @@
     "escalate": false,
     "escalation_reason": "",
     "policy_refs": [],
-    "reply_draft": "Dear Student,\n\nThank you for reaching out to the Student Helpdesk. Your message was unclear, and we are unable to identify how we can assist you. Please provide more details regarding your query so that we may direct you to the appropriate department.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Student,\n\nThank you for reaching out. Your message is unclear, and I am unable to determine how to assist you. Please provide more details regarding your query so that I can direct you to the appropriate department.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.4,
-    "agent_notes": "The email contains gibberish and no actionable request, so it is categorized as unclear with low confidence."
+    "agent_notes": "The email content is gibberish/unclear. Categorized as 'unclear' with low priority and no escalation required."
   },
   {
     "email_id": "E019",
     "category": "technical",
     "priority": "medium",
     "escalate": true,
-    "escalation_reason": "ESC-5: Transcript request is overdue per ACAD-3 (5 working days).; overdue: two weeks ago exceeds ACAD-3 window of 5 working days (ESC-5)",
+    "escalation_reason": "ESC-5: Transcript request is overdue per ACAD-3 (5 working days); route to Examination Department.",
     "policy_refs": [
       "TECH-2",
       "HOSTEL-5",
       "ACAD-3",
       "ESC-5"
     ],
-    "reply_draft": "Dear Maryam Idrees,\n\nWe have received your concerns. Regarding the Wi-Fi, please report the specific building and floor to the IT Helpdesk (TECH-2). Mess complaints should be submitted to the Mess Committee through the hostel office (HOSTEL-5). As your transcript application is now past the 5-working-day processing time (ACAD-3), we have escalated this to the Examination Department for review. Please contact them directly for an update on your status.\n\nRegards,\nStudent Helpdesk",
+    "reply_draft": "Dear Maryam Idrees,\n\nWe have received your concerns. 1) Please report the Wi-Fi issue to the IT Helpdesk with your specific building and floor (TECH-2). 2) Mess complaints should be submitted to the Mess Committee through the hostel office (HOSTEL-5). 3) Regarding your transcript, as the standard processing time is 5 working days (ACAD-3), your case has been escalated to the Examination Department for review. Please contact them directly for an update on your application.\n\nRegards,\nStudent Helpdesk",
     "confidence": 0.9,
-    "agent_notes": "The transcript request is overdue (ACAD-3), triggering ESC-5. Other issues are standard procedural requests for the IT and Mess departments. | also covers: academic, hostel | 3 issues addressed | code checks: overdue ACAD-3"
+    "agent_notes": "The transcript request is clearly overdue (2 weeks vs 5 days), requiring escalation per ESC-5. Other issues are routine and require the student to contact the respective departments. | also covers: academic, hostel | 3 issues addressed | code checks: overdue ACAD-3 (two weeks ago > 5 working days)"
   },
   {
     "email_id": "E020",
     "category": "academic",
     "priority": "medium",
     "escalate": true,
-    "escalation_reason": "ESC-5: The re-evaluation request has exceeded the 15-day response time stated in ACAD-4.; overdue: 25 days ago exceeds ACAD-4 window of 15 working days (ESC-5)",
+    "escalation_reason": "ESC-5: Complaint regarding re-evaluation is past the 15 working day response time stated in ACAD-4; route to Examination Department.",
     "policy_refs": [
       "ACAD-4",
       "ESC-5"
     ],
-    "reply_draft": "Dear Talha Iqbal,\n\nWe sincerely apologize for the delay in your re-evaluation request. As per policy ACAD-4, the outcome for re-evaluation is expected within 15 working days. Since your request has exceeded this timeframe, we have escalated your case to the Examination Department for an immediate status update. Please await further communication from their office regarding your application.\n\nRegards,\nStudent Helpdesk",
-    "confidence": 0.95,
-    "agent_notes": "The student is reporting an overdue complaint regarding a re-evaluation request (ACAD-4). Since the 15-day limit has passed, this requires escalation to the Examination Department per ESC-5. | code checks: overdue ACAD-4"
+    "reply_draft": "Dear Talha Iqbal,\n\nI apologize for the delay in your re-evaluation request. As per policy (ACAD-4), the outcome should be provided within 15 working days. Since this timeframe has passed, I have escalated your case to the Examination Department for immediate review. Please wait for their response, as the helpdesk cannot directly influence the processing timeline.\n\nRegards,\nStudent Helpdesk",
+    "confidence": 0.9,
+    "agent_notes": "The student's request is overdue per ACAD-4 (15 working days). Escalated to the Examination Department via ESC-5. | code checks: overdue ACAD-4 (25 days ago > 15 working days)"
   }
 ]
