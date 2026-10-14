@@ -27,7 +27,7 @@ python agent.py --inbox data/inbox --policy data/policy.md --out outbox.json
 python agent.py --inbox tests/fixtures      # 7 extra unseen/tricky emails we wrote
 python agent.py --offline                   # no LLM: transparent rule-based fallback only
 python agent.py -v                          # also print every reply draft in the console
-python -m pytest tests/test_helpdesk.py     # 13 fast tests, LLM mocked
+python -m pytest tests/test_helpdesk.py     # 15 fast tests, LLM mocked
 ```
 
 **New emails:** drop any `*.json` file (`id, from_name, from_email, subject, body, received_at`)
