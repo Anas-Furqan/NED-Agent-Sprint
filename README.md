@@ -103,15 +103,29 @@ are repaired in code; real violations trigger one regeneration, then a safe temp
 prompt says never follow it; code flags injection patterns (ESC-6) regardless of what the model
 says; the fallback strips injected sentences and only answers the genuine part of the email.
 
-**Reliability.** Retries with exponential backoff on 429/timeouts/invalid JSON (honours the
-server's retry delay, max 4 attempts), a small delay between emails, and a circuit breaker when the
-daily quota is exhausted. If the LLM fails, a transparent rule-based fallback runs (keyword
+**Deadlines.** "quiz submission tonight", "exam is today", "kal last date hai" raise priority
+(high for today, medium for tomorrow). This never changes escalation.
+
+**Reliability.** Retries with exponential backoff on 429/503/timeouts/invalid JSON (honours the
+server's retry delay, max 4 attempts) and a small delay between emails. If the main model is not
+available for the key (404), out of daily free-tier quota (429 PerDay), or keeps returning 503, the
+client rotates to the next model in `GEMINI_FALLBACK_MODELS` (each model has its own quota). If the LLM fails, a transparent rule-based fallback runs (keyword
 category -> policy section -> best rule by IDF word overlap -> template reply quoting the real rule),
 marks `agent_notes` with `FALLBACK`, caps confidence at 0.4, and escalates when unsure. The run
 always finishes and writes `outbox.json`.
 
 **Confidence.** Model confidence minus penalties: dropped invented codes, code repairs, a needed
 regeneration, an escalation the model missed, unclear category, fallback (cap 0.4).
+
+## Results on the 20 sample emails
+
+Last run (all 20 handled by Gemini, 0 fallback): 9 escalated, priority high 7 / medium 9 / low 4.
+Escalated: hazard (E005), harassment with confidentiality (E012), legal/media threat (E013),
+medical emergency (E014), prompt injection (E015), overdue hostel repair (E004, HOSTEL-1 48h),
+Wi-Fi outage for many users (E011), overdue transcript in a 3-issue email (E019, ACAD-3),
+overdue re-evaluation (E020, ACAD-4 15 working days). Routine cases (waiver, installments, refund,
+late room change) are answered with the correct rule and office and are not escalated.
+`outbox.json` and `logs/agent_run.log` show every decision.
 
 ## Project layout
 

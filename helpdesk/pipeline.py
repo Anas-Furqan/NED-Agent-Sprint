@@ -31,6 +31,7 @@ CODE_LIKE = re.compile(r"\b([A-Za-z]+)\s*[-_ ]?\s*(\d+)\b")
 class Result:
     entry: OutboxEntry
     fallback: bool = False
+    invalid: bool = False
     notes: list[str] = field(default_factory=list)
 
 
@@ -332,7 +333,7 @@ class TriageAgent:
             policy_refs=[], reply_draft=reply, confidence=0.1,
             agent_notes=f"Invalid input file '{path.name}': {problem}. No LLM call made.",
         )
-        return Result(entry, fallback=True)
+        return Result(entry, invalid=True)
 
     # ---------- whole inbox ----------
     def run(self, inbox: Path, out: Path) -> list[OutboxEntry]:
@@ -380,9 +381,9 @@ def _summary(results: list[Result], out: Path, client: GeminiClient | None) -> N
     entries = [r.entry for r in results]
     log.info("")
     log.info("════════ SUMMARY ════════")
-    log.info("Processed: %d | escalated: %d | fallback: %d | LLM calls: %s",
+    log.info("Processed: %d | escalated: %d | LLM fallback: %d | invalid input files: %d | LLM calls: %s",
              len(entries), sum(e.escalate for e in entries), sum(r.fallback for r in results),
-             client.calls if client else 0)
+             sum(r.invalid for r in results), client.calls if client else 0)
     log.info("By category: %s", dict(Counter(e.category for e in entries).most_common()))
     log.info("By priority: %s", dict(Counter(e.priority for e in entries).most_common()))
     log.info("Outbox written: %s (nothing was sent)", out)
