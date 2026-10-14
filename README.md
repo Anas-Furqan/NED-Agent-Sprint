@@ -151,7 +151,3 @@ tests/                test_helpdesk.py (mocked LLM), fixtures/ (unseen tricky em
 - The policy's Counseling Cell contact details are a placeholder, so replies do not invent numbers.
 - Fallback replies are template-based and less natural than LLM replies.
 
-## Earlier prototype
-
-`ned_agent/`, `app.py`, `policies/` and `requirements-prototype.txt` are an unused prototype built
-before the task was revealed (live Gmail automation). They are not part of the agent's flow.
