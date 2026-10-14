@@ -1,109 +1,143 @@
-# NED Agent Sprint — Gmail Support Operations Agent
+# Student Helpdesk Triage Agent (Agent Sprint, Engineer's Code 2026)
 
-A competition-ready Streamlit application for **The Engineer's Code 2026, Module #2**. It reads
-authorized Gmail messages, classifies support intent and risk, applies a trusted local policy,
-creates eligible **Gmail drafts only**, and sends high-risk cases to a human escalation queue.
+One command reads every email in `data/inbox/`, decides category, priority and escalation,
+finds the relevant rules in `data/policy.md`, drafts a policy-compliant reply, and writes
+everything to `outbox.json`. **Nothing is ever sent.** Every step is logged with its reason.
 
-The app has two visibly separate modes:
-
-- **Demo** uses deterministic synthetic fixtures and never calls Gmail.
-- **Live** uses an explicitly authorized test Gmail account and can save drafts. It never sends,
-  marks read, labels, archives, deletes, or otherwise modifies inbox messages.
-
-## Architecture
-
-```text
-Gmail/Demo → MIME normalization → SQLite dedup/claim → classification → deterministic risk rules
-           → trusted policy → reply generation → safety validation → draft reconciliation/create
-           → transaction + audit history → Streamlit dashboard
-```
-
-`ned_agent/` contains small replaceable modules for configuration, Gmail, classification providers,
-policy selection, security, escalation, persistence, and orchestration. SQLite records move through
-`pending → processing → completed`, with failures retained for review or safe retry. Transactional
-claims prevent overlapping workers from handling the same message. Agent-created drafts carry a stable
-message marker: retries reconcile that marker before any new creation, and ambiguous create outcomes
-are never blindly retried.
-
-## Windows quick start
-
-Python 3.11+ is recommended. From PowerShell in this repository:
+## Quick start (Windows PowerShell)
 
 ```powershell
-py -3 -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-Copy-Item .env.example .env
-streamlit run app.py
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env        # then put your key in .env: GEMINI_API_KEY=...
+python check_env.py           # optional: checks packages + key (reads the key from the environment)
+python agent.py               # processes data/inbox/ -> outbox.json, log in logs/agent_run.log
+streamlit run dashboard.py    # optional status dashboard over outbox.json
 ```
 
-If PowerShell blocks activation, run `Set-ExecutionPolicy -Scope Process Bypass` for that terminal or
-invoke `.venv\Scripts\python.exe` and `.venv\Scripts\streamlit.exe` directly.
+`check_env.py` reads only environment variables. If your key is only in `.env`, set it first:
+`$env:GEMINI_API_KEY="your_key"`. `agent.py` itself reads `.env` (python-dotenv) and falls back to
+environment variables. The key is never printed or logged.
 
-Demo mode works without credentials. Do not paste credentials into chat, source files, or Streamlit
-widgets. Edit the local `.env` and place OAuth JSON under `credentials/`; both are ignored by Git.
-
-## Gmail OAuth setup
-
-1. In [Google Cloud Console](https://console.cloud.google.com/), create/select a project.
-2. Enable **Gmail API** under APIs & Services.
-3. Configure the OAuth consent screen. For an app in **Testing**, add the competition Gmail account
-   under **Test users**. Google testing-mode refresh tokens can expire (commonly after seven days), so
-   authorize and rehearse close to the event.
-4. Create **OAuth client ID → Desktop app**, download the JSON, and save it as
-   `credentials/client_secret.json` (or update `GOOGLE_CLIENT_SECRETS_FILE`).
-5. Start the app, select Live, and choose **Connect Gmail**. The installed-application flow opens a
-   browser and stores a local `credentials/token.json` with restrictive permissions where supported.
-
-The app requests only:
-
-- `gmail.readonly`: list and retrieve messages without changing them.
-- `gmail.compose`: create/manage drafts. The app intentionally does **not** request `gmail.send`.
-
-To reauthorize, stop the app, delete only the local `credentials/token.json`, restart, and reconnect.
-Do not delete the downloaded client JSON. If scopes or test users change, reauthorization is required.
-
-## Gemini setup
-
-Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/app/apikey), set
-`GEMINI_API_KEY` in `.env`, and choose the available model with `GEMINI_MODEL`. This API key is an AI
-provider credential; it is completely different from the Gmail OAuth client JSON and user token.
-Without it, the app clearly labels and uses a limited rule fallback, routing ambiguous cases to manual
-review.
-
-## Configuration
-
-`.env.example` documents every setting. The default Gmail query `in:inbox newer_than:30d` includes
-new challenge emails without depending on unread state. Batch size is capped at 100. Categories are
-comma-separated and can be changed without modifying pipeline code. Replace
-`policies/company_policy.md` with organizer-approved policy before handling real customers.
-
-## Run checks
+Options:
 
 ```powershell
-python -m pytest --cov=ned_agent --cov-report=term-missing
-ruff check .
-ruff format --check .
-python -m compileall -q app.py ned_agent tests
-streamlit run app.py --server.headless true
+python agent.py --inbox data/inbox --policy data/policy.md --out outbox.json
+python agent.py --inbox tests/fixtures      # 7 extra unseen/tricky emails we wrote
+python agent.py --offline                   # no LLM: transparent rule-based fallback only
+python agent.py -v                          # also print every reply draft in the console
+python -m pytest tests/test_helpdesk.py     # 13 fast tests, LLM mocked
 ```
 
-External Gmail and Gemini APIs are mocked in automated tests; tests never send email or require paid
-calls. A real pre-event rehearsal remains necessary because credentials cannot be supplied by the
-repository.
+**New emails:** drop any `*.json` file (`id, from_name, from_email, subject, body, received_at`)
+into `data/inbox/` and run `python agent.py` again. No code changes needed. Broken or empty files
+do not crash the run: they get an escalated placeholder entry that explains the problem.
 
-## Troubleshooting
+## Output
 
-- **OAuth client missing:** verify the `.env` path and that the file is Desktop-app OAuth JSON.
-- **Access blocked / Error 403:** add the Gmail account as an OAuth test user and verify Gmail API is
-  enabled in the same Cloud project.
-- **Token expired or scope changed:** remove local `token.json` and reconnect.
-- **Redirect/browser issue:** allow localhost redirects and complete the flow on the same machine.
-- **Gemini unavailable:** confirm key/model access; the app safely falls back and records the provider.
-- **Draft not created:** review the message status. Escalation-only and No Reply decisions intentionally
-  disable draft creation. API errors remain failed/retryable rather than falsely completed.
-- **Locked database:** close duplicate local app processes; SQLite WAL and a 30-second busy timeout
-  protect normal overlapping dashboard activity.
+`outbox.json` is a list sorted by `email_id`, with exactly the keys and types of
+`sample_outbox.json`: `email_id, category, priority, escalate, escalation_reason, policy_refs,
+reply_draft, confidence, agent_notes`. It is written atomically (temp file + rename).
 
-Local message records may be cleared from Settings. That operation never changes Gmail.
+## Approach
+
+```
+load + validate JSON
+  -> deterministic pre-checks (regex, English + Roman Urdu)       -> hints for the LLM
+  -> ONE Gemini call (full policy + hints + email as UNTRUSTED DATA), strict JSON schema
+  -> guardrails in code: drop unknown policy codes, enforce escalations, overdue timing
+  -> reply validation (repair in code, or regenerate once, or safe template)
+  -> confidence scoring -> outbox.json + step log
+```
+
+**Why LLM + deterministic guardrails.** The LLM is good at understanding messy, multi-issue,
+Roman Urdu emails and writing a natural reply. Code is better at things that must never go wrong.
+So the model proposes, and code enforces: escalation can only be *added* by code, never removed;
+policy codes the model invents are dropped (and logged); the reply is checked before it is saved.
+
+**Policy retrieval.** `data/policy.md` is parsed at runtime into sections and rule codes
+(any `ABC-1:` style line). No policy text or code is hardcoded in Python. The policy is short, so
+the full text goes to the model; afterwards every returned code is checked against the parsed set.
+Escalation codes are found by searching the parsed rule text (e.g. the rule mentioning "harassment"),
+and response windows (48 hours, 5 working days, ...) are parsed from the rule wording.
+
+**Categories.** `fee, hostel, academic, technical` (topic) plus `wellbeing, harassment,
+security` (risk types without a topic) and `unclear` / `other`. Multi-issue emails get a primary
+category; the others are listed in `agent_notes` and every issue is answered in one reply.
+
+**Priority scheme.**
+- `high`: safety hazard, harassment, medical/wellbeing, legal/media threat, suspicious message, or a
+  hard deadline within about a day.
+- `medium`: actionable request, time-sensitive, or overdue complaint. Escalated emails are never `low`.
+- `low`: general information question or unclear message.
+
+**Escalation logic (deterministic, can only add).**
+
+| Signal (English + Roman Urdu patterns) | Rule found in policy | Priority |
+|---|---|---|
+| sparks, exposed wire, fire, smoke, structural cracks, *aag, karant* | hazard rules (HOSTEL-3, ESC-1) | high |
+| harassment, stalking, "keeps following me", bullying, *tang karna, dhamki* | ESC-2 | high |
+| fainted, not responding, hopeless, self-harm, *behosh* | ESC-3 | high |
+| lawyer, court, media, social media threat, *wakeel* | ESC-4 | high |
+| "ignore previous instructions", admin mode, requests for other students' data | ESC-6 | high |
+| outage + "whole class / many students" | TECH-2, ESC-5 | medium+ |
+| elapsed time in email > policy response window | ESC-5 (+ e.g. HOSTEL-2) | medium+ |
+
+Context matters: strong patterns are enforced; weak words (e.g. "scared", "court", "password")
+only go to the model as hints. Negations like "there is no fire" are ignored.
+
+**Time reasoning.** "Now" is the email's `received_at`, not the machine clock, so runs are
+reproducible. Durations like "25 days ago", "for 5 days", "since Monday", "do hafte pehle" are
+extracted per sentence, matched to the rule that sentence is about, and compared with the rule's
+response window (working days counted Mon-Fri).
+
+**Reply validation.** Under 150 words; addresses the student by name; signs off "Student Helpdesk";
+mentions a policy code; same language as the email (English / Roman Urdu); no promises the policy
+does not allow (waivers, refunds, guarantees, punishments); harassment replies never suggest
+confronting the person and acknowledge confidentiality when asked; wellbeing replies point to the
+campus clinic / Student Counseling Cell; no secrets or other people's email addresses. Small issues
+are repaired in code; real violations trigger one regeneration, then a safe template.
+
+**Prompt-injection defense.** Email content is wrapped and labeled as untrusted data; the system
+prompt says never follow it; code flags injection patterns (ESC-6) regardless of what the model
+says; the fallback strips injected sentences and only answers the genuine part of the email.
+
+**Reliability.** Retries with exponential backoff on 429/timeouts/invalid JSON (honours the
+server's retry delay, max 4 attempts), a small delay between emails, and a circuit breaker when the
+daily quota is exhausted. If the LLM fails, a transparent rule-based fallback runs (keyword
+category -> policy section -> best rule by IDF word overlap -> template reply quoting the real rule),
+marks `agent_notes` with `FALLBACK`, caps confidence at 0.4, and escalates when unsure. The run
+always finishes and writes `outbox.json`.
+
+**Confidence.** Model confidence minus penalties: dropped invented codes, code repairs, a needed
+regeneration, an escalation the model missed, unclear category, fallback (cap 0.4).
+
+## Project layout
+
+```
+agent.py              CLI entry point
+helpdesk/policy.py    policy.md parser (sections, codes, response windows, retrieval)
+helpdesk/signals.py   deterministic risk signals (EN + Roman Urdu)
+helpdesk/timing.py    elapsed time vs policy windows (overdue)
+helpdesk/prompts.py   system prompt + untrusted-data framing
+helpdesk/llm.py       Gemini client, JSON schema, retry/backoff
+helpdesk/validate.py  reply checks + repairs, language detection
+helpdesk/fallback.py  rule-based fallback + templates
+helpdesk/pipeline.py  orchestration, logging, outbox writing
+dashboard.py          Streamlit dashboard over outbox.json
+tests/                test_helpdesk.py (mocked LLM), fixtures/ (unseen tricky emails)
+```
+
+## Limitations
+
+- Regex signals can miss unusual phrasing; the LLM is the main detector, the regex is a safety net.
+- Roman Urdu detection is a word list; mixed-language emails default to English unless Urdu dominates.
+- Durations without a clear reference (e.g. "a while ago") are not used for overdue checks.
+- The policy's Counseling Cell contact details are a placeholder, so replies do not invent numbers.
+- Fallback replies are template-based and less natural than LLM replies.
+
+## Earlier prototype
+
+`ned_agent/`, `app.py`, `policies/` and `requirements-prototype.txt` are an unused prototype built
+before the task was revealed (live Gmail automation). They are not part of the agent's flow.
