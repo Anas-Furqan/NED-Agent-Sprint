@@ -87,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         log.warning("No GEMINI_API_KEY found (.env or environment): using rule-based FALLBACK for all emails")
 
-    cache = DecisionCache(args.cache_dir, enabled=not args.fresh)
+    cache = DecisionCache(args.cache_dir, read=not args.fresh, write=True)
     agent = TriageAgent(policy, client, settings.delay_seconds, cache)
     runner = Runner(agent, inbox, args.out, args.trace)
     if args.watch:

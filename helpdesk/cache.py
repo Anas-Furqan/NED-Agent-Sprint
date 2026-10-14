@@ -27,12 +27,19 @@ def content_hash(raw: bytes) -> str:
 
 
 class DecisionCache:
-    def __init__(self, folder: Path = Path(".cache"), enabled: bool = True):
+    """read=False skips lookups (--fresh still refreshes the cache); write=False never touches disk."""
+
+    def __init__(self, folder: Path = Path(".cache"), read: bool = True, write: bool = True):
         self.folder = folder
-        self.enabled = enabled
+        self.read = read
+        self.write = write
+
+    @classmethod
+    def disabled(cls) -> DecisionCache:
+        return cls(read=False, write=False)
 
     def get(self, key: str) -> dict | None:
-        if not self.enabled:
+        if not self.read:
             return None
         path = self.folder / f"{key}.json"
         try:
@@ -41,6 +48,8 @@ class DecisionCache:
             return None
 
     def put(self, key: str, value: dict) -> None:
+        if not self.write:
+            return
         self.folder.mkdir(parents=True, exist_ok=True)
         atomic_write_json(self.folder / f"{key}.json", value)
 

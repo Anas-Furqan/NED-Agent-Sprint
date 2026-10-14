@@ -72,7 +72,9 @@ def compose_reason(model_reason: str, items: list[tuple[str, list[str]]], routes
     """One readable sentence. Model reason first; code-found reasons it did not mention are added."""
     base = re.split(r"(?<=[.!?])\s", (model_reason or "").strip(), maxsplit=1)[0].rstrip(" .;")
     # code-found reasons the model's own reason does not already cover (code-less ones only if no model reason)
-    extra = [(p, c) for p, c in items if (c and not all(code in base for code in c)) or (not c and not base)]
+    extra = [(p, c) for p, c in items if (c and not any(code in base for code in c)) or (not c and not base)]
+    if re.search(r"(?i)overdue|unresolved|past the|exceed|response time|delay", base):
+        extra = [(p, c) for p, c in extra if not p.startswith("overdue:")]  # model already explained the delay
     extra = [(p, c) for p, c in extra if p.lower() not in base.lower()]
     if base:
         sentence = base + ("; also " + " and ".join(f"{p} ({', '.join(c)})" if c else p for p, c in extra)
@@ -92,7 +94,7 @@ class TriageAgent:
         self.policy = policy
         self.client = client
         self.delay = delay_seconds
-        self.cache = cache or DecisionCache(enabled=False)
+        self.cache = cache or DecisionCache.disabled()
 
     # ---------- per email ----------
     def process(self, path: Path, loaded: Loaded | None = None, email_id: str | None = None) -> Result:

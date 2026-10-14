@@ -82,9 +82,12 @@ def repair_and_check(reply: str, *, name: str, language: str, refs: list[str], s
         return reply, res
 
     first = name.split()[0]
-    if first.lower() not in reply.lower()[:120]:
+    if not reply.lstrip().lower().startswith("dear "):
         reply = f"Dear {name},\n\n{reply}"
-        res.repairs.append("added greeting with student name")
+        res.repairs.append("added 'Dear <name>,' greeting")
+    elif first.lower() not in reply.lower()[:120]:
+        reply = re.sub(r"(?i)^\s*dear [^,\n]*,?", f"Dear {name},", reply, count=1)
+        res.repairs.append("fixed greeting to use the student's name")
     reply = re.sub(r"\n[ \t]*\n(?:[ \t]*\n)+", "\n\n", reply.replace("\r\n", "\n"))
     # layout: greeting on its own line, body, then "Regards," + "Student Helpdesk" on their own lines
     reply = re.sub(r"^(Dear [^,\n]{1,60},)[ \t]+", r"\1\n\n", reply)

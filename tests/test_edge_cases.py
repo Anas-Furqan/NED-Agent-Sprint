@@ -240,7 +240,7 @@ def test_cache_hit_skips_llm(tmp_path):
     first = client.calls
     results = Runner(TriageAgent(POLICY, client, 0, cache), inbox, out).run()
     assert client.calls == first and all(r.cache_hit for r in results)
-    fresh = Runner(TriageAgent(POLICY, client, 0, DecisionCache(tmp_path / ".cache", enabled=False)), inbox, out)
+    fresh = Runner(TriageAgent(POLICY, client, 0, DecisionCache(tmp_path / ".cache", read=False)), inbox, out)
     fresh.run()
     assert client.calls > first
 
@@ -295,6 +295,33 @@ def test_no_sample_specific_hardcoding():
         text = src.read_text(encoding="utf-8")
         hits += [f"{src.name}: {n}" for n in needles if re.search(rf"(?<![\w-]){re.escape(n)}(?![\w-])", text)]
     assert not hits, f"sample-specific strings in source: {hits}"
+
+
+def test_default_cache_never_writes(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    inbox = copy_samples(tmp_path, 1)
+    Runner(TriageAgent(POLICY, FlakyClient(ok_calls=5), 0), inbox, tmp_path / "outbox.json").run()
+    assert not (tmp_path / ".cache").exists()  # tests/mocks must never pollute a real cache
+
+
+def test_overdue_not_repeated_when_model_explained_it():
+    r = compose_reason("HOSTEL-2: Complaint unresolved after 48 hours; escalating to Hostel Warden.",
+                       [("overdue: for 5 days exceeds the 48 hours window of HOSTEL-1", ["ESC-5", "HOSTEL-2"])],
+                       ["Hostel Warden"])
+    assert "also" not in r
+
+
+def test_signal_reason_not_repeated_when_model_cited_code():
+    r = compose_reason("ESC-1: Electrical hazard reported; Hostel Warden and Security alerted.",
+                       [("safety hazard", ["HOSTEL-3", "ESC-1"])], ["Hostel Warden and Security"])
+    assert "also" not in r
+
+
+def test_greeting_enforced():
+    out, res = repair_and_check("Walaikum Assalam, Ali. Block D se door rahein (HOSTEL-3).\n\nRegards,\nStudent Helpdesk",
+                                name="Ali Khan", language="roman_urdu", refs=["HOSTEL-3"], sender_email="",
+                                signals=set(), confidential=False)
+    assert out.startswith("Dear Ali Khan,")
 
 
 def test_reason_not_duplicated_for_codeless_items():
