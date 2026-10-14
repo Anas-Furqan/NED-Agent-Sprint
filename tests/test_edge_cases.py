@@ -295,3 +295,14 @@ def test_no_sample_specific_hardcoding():
         text = src.read_text(encoding="utf-8")
         hits += [f"{src.name}: {n}" for n in needles if re.search(rf"(?<![\w-]){re.escape(n)}(?![\w-])", text)]
     assert not hits, f"sample-specific strings in source: {hits}"
+
+
+def test_reason_not_duplicated_for_codeless_items():
+    r = compose_reason("Attempted bribery; requires human intervention.", [("academic-integrity request", [])], [])
+    assert "also" not in r and r == "Attempted bribery; requires human intervention."
+
+
+def test_reply_blank_lines_collapsed():
+    out, _ = repair_and_check("Dear Ali,\n\n\n\nText (FEE-1).\n\nRegards,\nStudent Helpdesk", name="Ali",
+                              language="english", refs=["FEE-1"], sender_email="", signals=set(), confidential=False)
+    assert "\n\n\n" not in out

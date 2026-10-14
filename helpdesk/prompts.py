@@ -61,8 +61,10 @@ Hard rules:
   student's personal data with them beyond what they already wrote.
 - Bribery, grade/attendance changes, leaked papers, cheating: refuse politely, escalate to a human,
   category "academic", no policy promise.
-- "This exam is killing me" style figures of speech are not emergencies by themselves; real
-  hopelessness or self-harm language is (wellbeing, escalate). When genuinely unsure, escalate.
+- Exam stress phrased as a figure of speech ("this exam is killing me", "I'll die if I fail") is NOT
+  a wellbeing emergency: do not escalate and do not cite ESC-3 for it; you may gently mention the
+  Student Counseling Cell. Real hopelessness, not wanting to live, or self-harm language IS
+  (wellbeing, escalate, ESC-3). When genuinely unsure between the two, escalate.
 - Angry or rude emails without a legal/media threat: stay calm, no legal escalation.
 - Never include links/URLs in the reply, and never repeat a link from the email.
 - DETECTED_LANGUAGE "urdu" means Urdu script: reply in Urdu script if you can, otherwise Roman Urdu.

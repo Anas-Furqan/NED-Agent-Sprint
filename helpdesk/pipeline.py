@@ -71,7 +71,8 @@ def clean_refs(raw: list[str], policy: Policy) -> tuple[list[str], list[str]]:
 def compose_reason(model_reason: str, items: list[tuple[str, list[str]]], routes: list[str]) -> str:
     """One readable sentence. Model reason first; code-found reasons it did not mention are added."""
     base = re.split(r"(?<=[.!?])\s", (model_reason or "").strip(), maxsplit=1)[0].rstrip(" .;")
-    extra = [(p, c) for p, c in items if not c or not all(code in base for code in c)]
+    # code-found reasons the model's own reason does not already cover (code-less ones only if no model reason)
+    extra = [(p, c) for p, c in items if (c and not all(code in base for code in c)) or (not c and not base)]
     extra = [(p, c) for p, c in extra if p.lower() not in base.lower()]
     if base:
         sentence = base + ("; also " + " and ".join(f"{p} ({', '.join(c)})" if c else p for p, c in extra)
@@ -150,8 +151,9 @@ class TriageAgent:
         tr.step(2, "Pre-check", f"strong: {_fmt_signals(strong) or 'none'} | weak hints: {_fmt_signals(weak) or 'none'}"
                 + (f" | kind: {kind}" if kind else "") + (" | confidentiality requested" if confidential else ""),
                 "alert" if strong else "ok")
-        hints = [f"{'STRONG' if s.strong else 'weak'} {s.label}: matched {s.evidence} -> rules {s.codes}"
-                 for s in signals]
+        hints = [f"STRONG {s.label}: matched {s.evidence} -> rules {s.codes}" if s.strong else
+                 f"weak keyword only (needs context; often figurative or harmless, do not escalate on this "
+                 f"alone): {s.name} words {s.evidence}" for s in signals]
         if confidential:
             hints.append("student explicitly asks for confidentiality")
         if kind:

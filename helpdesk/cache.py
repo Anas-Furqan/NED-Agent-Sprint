@@ -11,7 +11,7 @@ import os
 import tempfile
 from pathlib import Path
 
-PROMPT_VERSION = "v3"
+PROMPT_VERSION = "v4"
 
 
 def cache_key(raw: bytes, policy_text: str, model_tag: str = "") -> str:
