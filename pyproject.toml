@@ -3,6 +3,7 @@ testpaths = ["tests"]
 addopts = "-q --disable-warnings --strict-markers --basetemp=.pytest_tmp -p no:cacheprovider"
 
 [tool.ruff]
+extend-exclude = ["team_kit", "check_env.py"]  # organiser-provided files, kept unmodified
 target-version = "py311"
 line-length = 100
 

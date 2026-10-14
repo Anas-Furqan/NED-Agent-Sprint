@@ -184,7 +184,7 @@ def decoded_base64(text: str) -> str:
     for chunk in BASE64.findall(text):
         try:
             decoded = base64.b64decode(chunk + "=" * (-len(chunk) % 4)).decode("utf-8")
-        except Exception:
+        except Exception:  # noqa: S112  (not base64: skip)
             continue
         if decoded and sum(c.isprintable() for c in decoded) / len(decoded) > 0.9:
             out.append(decoded)

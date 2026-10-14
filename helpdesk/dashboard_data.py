@@ -198,7 +198,7 @@ def save_uploaded(inbox: Path, name: str, content: bytes) -> Path:
 
 def run_agent_stream(args: list[str], timeout: float = 300):
     """Run agent.py as a subprocess and yield its log lines live. Stops after `timeout` seconds."""
-    proc = subprocess.Popen([sys.executable, "-u", "agent.py", *args], stdout=subprocess.PIPE,
+    proc = subprocess.Popen([sys.executable, "-u", "agent.py", *args], stdout=subprocess.PIPE,  # noqa: S603  (fixed argv, no shell)
                             stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
     start = time.time()
     try:

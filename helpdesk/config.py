@@ -6,7 +6,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-
 # Tried in order when the main model is unavailable or out of free-tier quota (separate quotas).
 DEFAULT_FALLBACK_MODELS = "gemini-3.1-flash-lite,gemini-flash-lite-latest,gemini-3.5-flash"
 

@@ -4,8 +4,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from helpdesk.llm import GeminiClient, LLMUnavailable
 from helpdesk.loader import load_email
 from helpdesk.pipeline import Runner, TriageAgent, clean_refs
