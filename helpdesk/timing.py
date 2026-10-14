@@ -80,6 +80,26 @@ def _durations(sentence: str, now: datetime | None) -> list[tuple[str, float]]:
     return out
 
 
+DEADLINE_HIGH = re.compile(
+    r"(?i)\b(tonight|today|this (evening|afternoon)|in (\d+|a few|two|three) hours|aaj( raat)?|abhi)\b"
+    r"[^.?!\n]{0,40}\b(deadline|due|submission|quiz|exam|last date|test|closes?)\b"
+    r"|\b(deadline|due|submission|quiz|exam|last date|test)\b[^.?!\n]{0,40}\b(tonight|today|aaj)\b"
+    r"|\b(submission|quiz|exam|deadline)\b[^.?!\n]{0,20}\b(tonight|at \d{1,2}\s?(am|pm))"
+)
+DEADLINE_MEDIUM = re.compile(r"(?i)\b(tomorrow|kal)\b[^.?!\n]{0,30}\b(deadline|due|last date|exam|submission)\b"
+                             r"|\b(deadline|due date|last date)\b[^.?!\n]{0,30}\b(tomorrow|kal)\b")
+
+
+def deadline_urgency(body: str) -> tuple[str, str] | None:
+    """(priority floor, matched text) for hard deadlines the student mentions."""
+    for level, pat in (("high", DEADLINE_HIGH), ("medium", DEADLINE_MEDIUM)):
+        for m in pat.finditer(body or ""):
+            if re.search(r"(?i)\b(days?|weeks?|months?)\b|from today", m.group(0)):
+                continue  # "10 days from today" is not an imminent deadline
+            return level, m.group(0)
+    return None
+
+
 def check_overdue(body: str, received_at: str | None, refs: list[str], policy: Policy) -> list[OverdueFinding]:
     now = parse_received(received_at)
     windowed = [c for c in refs if c in policy.rules and policy.rules[c].windows]

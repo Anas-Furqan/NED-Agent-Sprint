@@ -20,7 +20,7 @@ from .prompts import SYSTEM, build_prompt, build_repair_prompt
 from .schemas import (Email, LLMReply, LLMTriage, OutboxEntry, max_priority, normalize_category,
                       normalize_priority)
 from .signals import Signal, detect_signals, strip_suspicious, wants_confidentiality
-from .timing import check_overdue
+from .timing import check_overdue, deadline_urgency
 from .validate import detect_language, greeting_name, repair_and_check
 
 log = logging.getLogger("helpdesk")
@@ -176,6 +176,13 @@ class TriageAgent:
         if not timing:
             log.info("  5. Timing     no elapsed-time claim tied to a response window")
 
+        # --- deadline urgency (priority only, never escalation) ---
+        urgency = deadline_urgency(email.body)
+        if urgency and priority != max_priority(priority, urgency[0]):
+            log.info("  5. Deadline   '%s' -> priority raised %s -> %s", urgency[1], priority, urgency[0])
+            priority = urgency[0]
+            code_notes.append(f"deadline '{urgency[1]}'")
+
         if used_fallback and category in ("other", "unclear") and not escalate:
             escalate = True
             reasons.append("fallback could not classify confidently; needs human review")
@@ -235,8 +242,8 @@ class TriageAgent:
 
         # --- notes ---
         notes = (triage.agent_notes or "").strip()
-        secondary = sorted({normalize_category(c) for c in triage.secondary_categories} |
-                           {normalize_category(i.category) for i in triage.issues} - {category, "other"})
+        secondary = sorted(({normalize_category(c) for c in triage.secondary_categories} |
+                            {normalize_category(i.category) for i in triage.issues}) - {category, "other"})
         extra = []
         if used_fallback:
             extra.append(f"FALLBACK (LLM unavailable: {llm_error[:60]})")

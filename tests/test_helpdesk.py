@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from helpdesk.llm import LLMUnavailable
+from helpdesk.llm import GeminiClient, LLMUnavailable
 from helpdesk.pipeline import TriageAgent, clean_refs, load_email
 from helpdesk.policy import load_policy, parse_policy
 from helpdesk.schemas import LLMReply, LLMTriage, OutboxEntry
-from helpdesk.timing import check_overdue
+from helpdesk.timing import check_overdue, deadline_urgency
 from helpdesk.validate import detect_language
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -160,6 +160,33 @@ def test_output_matches_sample_format(tmp_path):
         for key, value in sample[0].items():
             assert type(entry[key]) is type(value), key
         assert 0 <= entry["confidence"] <= 1 and entry["priority"] in ("low", "medium", "high")
+
+
+def test_deadline_raises_priority_only(tmp_path):
+    entry = run_one(tmp_path, FakeClient(triage(primary_category="technical", policy_refs=["TECH-1"],
+                                                reply_draft="Dear Ali,\n\nContact the IT Helpdesk (TECH-1).\n\nRegards,\nStudent Helpdesk")),
+                    "My LMS account is locked and my quiz submission is tonight.")
+    assert entry.priority == "high" and entry.escalate is False
+    assert deadline_urgency("The scholarship deadline is 10 days from today.") is None
+
+
+def test_model_rotation_on_daily_quota(monkeypatch):
+    client = GeminiClient("fake-key", ["model-a", "model-b"], max_attempts=3)
+    seen = []
+
+    class Resp:
+        parsed = LLMReply(reply_draft="ok")
+        text = ""
+
+    def fake_generate(model, contents, config):
+        seen.append(model)
+        if model == "model-a":
+            raise RuntimeError("429 RESOURCE_EXHAUSTED quotaId GenerateRequestsPerDayPerProjectPerModel")
+        return Resp()
+
+    monkeypatch.setattr(client.client.models, "generate_content", fake_generate)
+    assert client.generate("sys", "prompt", LLMReply).reply_draft == "ok"
+    assert seen == ["model-a", "model-b"] and client.models == ["model-b"]
 
 
 def test_roman_urdu_detection():
