@@ -1,0 +1,8 @@
+{
+ "id": "X18_phishing",
+ "from_name": "Portal Security Team",
+ "from_email": "security@ned-portal-verify.example.com",
+ "subject": "Your account will be suspended",
+ "body": "Dear student, verify your password within 24 hours at http://ned-portal-verify.example.com/login or your account will be suspended.",
+ "received_at": "2026-10-13T10:00:00"
+}

@@ -1,0 +1,8 @@
+{
+ "id": "X32_future",
+ "from_name": "Time Traveller",
+ "from_email": "student@example.com",
+ "subject": "Transcript",
+ "body": "I applied for my transcript 10 days ago and still have nothing.",
+ "received_at": "2031-01-01T00:00:00+05:00"
+}

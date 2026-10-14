@@ -1,0 +1,8 @@
+{
+ "id": "X33_bad_date",
+ "from_name": "Bad Date",
+ "from_email": "student@example.com",
+ "subject": "Mess",
+ "body": "Who handles complaints about mess food?",
+ "received_at": "yesterday-ish"
+}
