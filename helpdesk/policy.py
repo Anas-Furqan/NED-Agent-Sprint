@@ -22,7 +22,8 @@ STOPWORDS = set(
     """a an the and or of to in on for with by is are be can only after before within
     from their they this that it as at if not no any all must up per gets get has have
     student students through who which there them its will may out into one two three four
-    five first last day days week weeks hour hours working please also need""".split()
+    five first last day days week weeks hour hours working please also need cannot could would
+    should does did done full""".split()
 )
 
 
@@ -62,7 +63,8 @@ class Policy:
     def rules_in_section(self, section_keyword: str) -> list[str]:
         return [c for c, r in self.rules.items() if section_keyword.lower() in r.section.lower()]
 
-    def best_matching(self, text: str, candidates: list[str] | None = None, top: int = 2) -> list[str]:
+    def best_matching(self, text: str, candidates: list[str] | None = None, top: int = 2,
+                      min_score: float = 0.5) -> list[str]:
         """Rank rules by IDF-weighted word overlap with text (simple, transparent retrieval)."""
         tf = Counter(_stem_list(text))
         stems = {c: _stems(r.text) for c, r in self.rules.items()}
@@ -71,7 +73,7 @@ class Policy:
         for code in candidates if candidates is not None else self.rules:
             shared = set(tf) & stems[code]
             score = sum(min(tf[w], 3) * math.log((n + 1) / sum(1 for s in stems.values() if w in s)) for w in shared)
-            if score > 0.5:
+            if score >= min_score:
                 scored.append((score, code))
         scored.sort(key=lambda x: (-x[0], x[1]))
         return [c for _, c in scored[:top]]

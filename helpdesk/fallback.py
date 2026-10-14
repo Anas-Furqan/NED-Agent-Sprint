@@ -35,6 +35,7 @@ TEXT = {
         "outage": "Since this affects many users, it has been escalated to the responsible team ({codes}).",
         "overdue": "Since this is past the stated response time, it has been escalated to the responsible office ({codes}).",
         "review": "A staff member will review your message.",
+        "not_covered": "Your question is not covered by the helpdesk policy, so we cannot give a definite answer. Please contact the {office}, or reply with more details and a staff member will guide you.",
     },
     "roman_urdu": {
         "thanks": "Aap ka email bhejne ka shukriya.",
@@ -49,6 +50,7 @@ TEXT = {
         "outage": "Yeh masla bohat se users ko mutasir kar raha hai, is liye escalate kar diya gaya hai ({codes}).",
         "overdue": "Muqarrara waqt guzar chuka hai, is liye yeh masla escalate kar diya gaya hai ({codes}).",
         "review": "Hamara staff aap ka paigham dekhega.",
+        "not_covered": "Yeh sawal helpdesk policy mein shamil nahi hai, is liye hum yaqeeni jawab nahi de sakte. Meharbani kar ke {office} se rabta karein.",
     },
 }
 
@@ -89,7 +91,7 @@ def topic_rules(text: str, categories: list[str], policy: Policy) -> list[str]:
         relevant = " ".join(s for s in sentences if re.search(CATEGORY_KEYWORDS[cat], s, re.I)) or text
         expanded = " ".join(v for k, v in EXPANSIONS.items() if re.search(k, relevant, re.I))
         relevant += f" {expanded} {expanded}"  # weight explicit topic terms above generic words
-        refs += [c for c in policy.best_matching(relevant, candidates, top=1) if c not in refs]
+        refs += [c for c in policy.best_matching(relevant, candidates, top=1, min_score=2.5) if c not in refs]
     return refs
 
 
@@ -112,7 +114,7 @@ def _short(text: str, max_words: int = 26) -> str:
 
 
 def fallback_reply(name: str, language: str, topic_refs: list[str], signal_lines: dict[str, list[str]],
-                   unclear: bool, policy: Policy) -> str:
+                   unclear: bool, policy: Policy, not_covered_office: str | None = None) -> str:
     t = TEXT.get(language, TEXT["english"])
     parts = [f"Dear {name},", t["thanks"]]
     for key, codes in signal_lines.items():
@@ -120,11 +122,13 @@ def fallback_reply(name: str, language: str, topic_refs: list[str], signal_lines
             parts.append(t[key].format(codes=", ".join(codes)))
     if unclear and not signal_lines:
         parts.append(t["unclear"])
-    elif "suspicious" not in signal_lines:
+    else:
         for code in topic_refs[:2]:
             parts.append(t["rule"].format(code=code, text=_short(policy.rules[code].text)))
         if topic_refs:
             parts.append(t["next"].format(office=office_for(topic_refs, policy)))
+        elif not_covered_office and "suspicious" not in signal_lines:
+            parts.append(t["not_covered"].format(office=not_covered_office))
         elif not signal_lines:
             parts.append(t["review"])
     parts.append("Regards,\nStudent Helpdesk")

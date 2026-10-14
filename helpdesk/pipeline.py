@@ -19,7 +19,7 @@ from .policy import Policy
 from .prompts import SYSTEM, build_prompt, build_repair_prompt
 from .schemas import (Email, LLMReply, LLMTriage, OutboxEntry, max_priority, normalize_category,
                       normalize_priority)
-from .signals import Signal, detect_signals, wants_confidentiality
+from .signals import Signal, detect_signals, strip_suspicious, wants_confidentiality
 from .timing import check_overdue
 from .validate import detect_language, greeting_name, repair_and_check
 
@@ -270,41 +270,47 @@ class TriageAgent:
     def _fallback_triage(self, email: Email, text: str, name: str, language: str,
                          signals: list[Signal]) -> LLMTriage:
         strong = [s for s in signals if s.strong]
-        cats = fb.keyword_categories(text)
+        clean = strip_suspicious(text)  # never act on the injected part of a message
+        cats = fb.keyword_categories(clean)
         category = next((fb.SIGNAL_CATEGORY[s.name] for s in strong
                          if s.name in fb.SIGNAL_CATEGORY and s.name != "safety"), None)
-        if not category and not cats and strong:
-            # category of the first topic (non-escalation) rule the signal points to, e.g. a hostel hazard rule
+        if not category and any(s.name == "safety" for s in strong):
+            # category of the topic (non-escalation) rule the hazard signal points to, e.g. a hostel rule
             sections = [self.policy.section_of(c).lower() for s in strong for c in s.codes]
             category = next((cat for sec in sections for cat, key in fb.CATEGORY_SECTION.items() if key in sec), None)
         category = category or (cats[0] if cats else "unclear")
-        topic = [] if any(s.name == "suspicious" for s in strong) else fb.topic_rules(text, cats, self.policy)
+        topic = fb.topic_rules(clean, cats, self.policy)
+        if cats and not topic and category == cats[0]:
+            category = "other"  # topic words present but no policy rule matches
         sig_codes = [c for s in strong for c in s.codes]
         refs = list(dict.fromkeys(topic + sig_codes))
         priority = "high" if any(s.priority == "high" for s in strong) else ("medium" if cats else "low")
         reply = self._template_reply(email, text, name, language, refs, strong, [], category)
+        not_covered = " Topic not covered by policy." if cats and not topic else ""
         return LLMTriage(
             primary_category=category, secondary_categories=cats[1:3], issues=[],
             priority=priority, escalate=bool(strong),
             escalation_reason="; ".join(f"{s.label} ({', '.join(s.codes)})" for s in strong),
-            policy_refs=refs, reply_draft=reply, confidence=0.4 if cats or strong else 0.2,
+            policy_refs=refs, reply_draft=reply, confidence=0.4 if (topic or strong) else 0.2,
             detected_language=language,
-            agent_notes=f"Rule-based: keywords -> {cats or ['none']}; rules by word overlap -> {topic or 'none'}.",
+            agent_notes=f"Rule-based: keywords -> {cats or ['none']}; rules by word overlap -> {topic or 'none'}.{not_covered}",
         )
 
     def _template_reply(self, email: Email, text: str, name: str, language: str, refs: list[str],
                         strong: list[Signal], timing, category: str) -> str:
-        cats = fb.keyword_categories(text)
+        clean = strip_suspicious(text)
+        cats = fb.keyword_categories(clean)
         signal_codes = {c for s in strong for c in s.codes}
         topic = [c for c in refs if c not in signal_codes and not self.policy.section_of(c).lower().startswith("escalation")]
-        if not topic and "suspicious" not in {s.name for s in strong}:
-            topic = fb.topic_rules(text, cats, self.policy)
+        if not topic:
+            topic = fb.topic_rules(clean, cats, self.policy)
         lines = {s.name: s.codes for s in strong}
         for f in timing or []:
             if f.overdue:
                 lines["overdue"] = [c for c in refs if c not in topic] or [f.code]
-        unclear = category in ("unclear",) or (not cats and not strong)
-        return fb.fallback_reply(name, language, topic, lines, unclear, self.policy)
+        unclear = category == "unclear" or (not cats and not strong)
+        office = fb.office_for(self.policy.rules_in_section(fb.CATEGORY_SECTION[cats[0]]), self.policy) if cats else None
+        return fb.fallback_reply(name, language, topic, lines, unclear, self.policy, not_covered_office=office)
 
     def _invalid(self, path: Path, email: Email | None, problem: str) -> Result:
         eid = email.id if email else path.stem

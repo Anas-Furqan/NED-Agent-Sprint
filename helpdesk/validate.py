@@ -43,7 +43,8 @@ def detect_language(text: str) -> str:
 
 def greeting_name(from_name: str, body: str = "") -> str:
     name = (from_name or "").strip()
-    if not name or NON_PERSON.search(name) or re.search(r"\d|@", name) or len(name) < 2:
+    if (not name or NON_PERSON.search(name) or re.search(r"\d|@", name) or len(name) < 3
+            or not re.search(r"[aeiouAEIOU]", name)):
         return "Student"
     return name
 

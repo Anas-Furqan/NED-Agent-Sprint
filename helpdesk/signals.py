@@ -162,6 +162,13 @@ def detect_signals(subject: str, body: str, policy: Policy) -> list[Signal]:
     return signals
 
 
+def strip_suspicious(text: str) -> str:
+    """Drop sentences that contain injection/phishing patterns, keep the genuine request (if any)."""
+    spec = next(s for s in SPECS if s.name == "suspicious")
+    sentences = re.split(r"(?<=[.!?\n])\s+", text)
+    return " ".join(s for s in sentences if not _find(spec.strong, s, check_negation=False))
+
+
 CONFIDENTIAL = re.compile(
     r"(?i)(do not|don'?t|please don'?t) (tell|share|reveal|disclose)[^.]{0,30}(name|anyone|identity)"
     r"|confidential|keep (this|it|my name) (private|secret)|anonymous|kisi ko (na|mat) bata|naam (na|mat) bata"
