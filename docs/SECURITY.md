@@ -26,6 +26,11 @@ human-request rules. These create explainable escalation records. Low-confidence
 output falls back to limited rules and manual review. Generated text is checked for secrets, unsupported
 refund approval, guarantees, commitments, and credential-harvesting language before any draft operation.
 
+Draft creation is deliberately single-attempt because it is not inherently idempotent. Each agent draft
+contains an internal message marker. After a lost response or transient server failure, the application
+searches for that marker before accepting a draft as saved. If no marked draft can be confirmed, the
+outcome stays visibly ambiguous and automatic recreation is blocked for manual review.
+
 ## Retention
 
 SQLite stores metadata, a 4,000-character body preview, classifications, draft previews, errors, and

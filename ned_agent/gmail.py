@@ -21,6 +21,7 @@ from .models import NormalizedEmail
 
 T = TypeVar("T")
 LOGGER = logging.getLogger(__name__)
+AGENT_MESSAGE_HEADER = "X-NED-Agent-Message-ID"
 
 
 class GmailError(RuntimeError):
@@ -123,7 +124,12 @@ def with_retry(operation: Callable[[], T], attempts: int = 3, base_delay: float 
         except Exception as error:  # provider exceptions vary by dependency version
             last = error
             status = getattr(getattr(error, "resp", None), "status", None)
-            if status not in (429, 500, 502, 503, 504) or number == attempts - 1:
+            transient_transport = isinstance(error, (TimeoutError, ConnectionError)) or type(
+                error
+            ).__name__ in {"Timeout", "ReadTimeout", "ConnectTimeout", "TransportError"}
+            if (
+                not transient_transport and status not in (408, 429, 500, 502, 503, 504)
+            ) or number == attempts - 1:
                 raise
             time.sleep(base_delay * (2**number) + random.uniform(0, 0.1))
     raise GmailError("Retry operation failed") from last
@@ -255,14 +261,16 @@ class GmailClient:
 
     def get_draft(self, draft_id: str) -> dict[str, Any]:
         return with_retry(
-            lambda: self.service.users().drafts().get(userId="me", id=draft_id).execute()
+            lambda: (
+                self.service.users().drafts().get(userId="me", id=draft_id, format="full").execute()
+            )
         )
 
     def create_draft(self, email: NormalizedEmail, subject: str, body: str) -> dict[str, Any]:
         payload = build_draft_payload(email, subject, body)
-        result = with_retry(
-            lambda: self.service.users().drafts().create(userId="me", body=payload).execute()
-        )
+        # Never automatically retry a non-idempotent create. The caller reconciles marked drafts
+        # before deciding whether a later attempt is safe.
+        result = self.service.users().drafts().create(userId="me", body=payload).execute()
         if not result.get("id"):
             raise GmailError("Gmail did not return a draft ID")
         return result
@@ -272,6 +280,7 @@ def build_draft_payload(email: NormalizedEmail, subject: str, body: str) -> dict
     message = EmailMessage()
     message["To"] = email.sender_email
     message["Subject"] = subject if subject.lower().startswith("re:") else f"Re: {subject}"
+    message[AGENT_MESSAGE_HEADER] = email.message_id
     if email.rfc_message_id:
         message["In-Reply-To"] = email.rfc_message_id
         refs = f"{email.references or ''} {email.rfc_message_id}".strip()
@@ -279,3 +288,12 @@ def build_draft_payload(email: NormalizedEmail, subject: str, body: str) -> dict
     message.set_content(body)
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode("ascii").rstrip("=")
     return {"message": {"raw": raw, "threadId": email.thread_id}}
+
+
+def draft_matches_message(draft: dict[str, Any], message_id: str) -> bool:
+    headers = draft.get("message", {}).get("payload", {}).get("headers", [])
+    return any(
+        header.get("name", "").casefold() == AGENT_MESSAGE_HEADER.casefold()
+        and header.get("value") == message_id
+        for header in headers
+    )

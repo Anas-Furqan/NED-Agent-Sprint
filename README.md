@@ -19,8 +19,11 @@ Gmail/Demo → MIME normalization → SQLite dedup/claim → classification → 
 ```
 
 `ned_agent/` contains small replaceable modules for configuration, Gmail, classification providers,
-policy selection, security, escalation, persistence, and orchestration. See
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+policy selection, security, escalation, persistence, and orchestration. SQLite records move through
+`pending → processing → completed`, with failures retained for review or safe retry. Transactional
+claims prevent overlapping workers from handling the same message. Agent-created drafts carry a stable
+message marker: retries reconcile that marker before any new creation, and ambiguous create outcomes
+are never blindly retried.
 
 ## Windows quick start
 
@@ -79,8 +82,9 @@ comma-separated and can be changed without modifying pipeline code. Replace
 ## Run checks
 
 ```powershell
-python -m pytest
+python -m pytest --cov=ned_agent --cov-report=term-missing
 ruff check .
+ruff format --check .
 python -m compileall -q app.py ned_agent tests
 streamlit run app.py --server.headless true
 ```

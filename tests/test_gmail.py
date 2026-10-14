@@ -1,12 +1,15 @@
+import ast
 import base64
 import inspect
 from email import message_from_bytes
+from pathlib import Path
 
 import pytest
 
 import ned_agent.gmail as gmail_module
 from ned_agent.config import DEFAULT_SCOPES
 from ned_agent.gmail import (
+    AGENT_MESSAGE_HEADER,
     GmailClient,
     GmailError,
     authenticate,
@@ -38,6 +41,7 @@ def test_draft_payload_preserves_threading(email):
     assert message["To"] == "customer@example.test"
     assert message["In-Reply-To"] == "<m-1@example.test>"
     assert message["Subject"].startswith("Re:")
+    assert message[AGENT_MESSAGE_HEADER] == "m-1"
 
 
 def test_retry_is_bounded(monkeypatch):
@@ -57,6 +61,48 @@ def test_retry_is_bounded(monkeypatch):
     assert calls == 3
 
 
+def test_read_timeout_is_retried(monkeypatch):
+    calls = 0
+
+    def operation():
+        nonlocal calls
+        calls += 1
+        if calls < 3:
+            raise TimeoutError("temporary timeout")
+        return "ok"
+
+    monkeypatch.setattr("ned_agent.gmail.time.sleep", lambda _: None)
+    assert with_retry(operation, attempts=3, base_delay=0) == "ok"
+    assert calls == 3
+
+
+def test_draft_create_is_single_attempt_on_ambiguous_failure(email):
+    class Request:
+        calls = 0
+
+        def execute(self):
+            self.calls += 1
+            raise TimeoutError("response lost")
+
+    class Service:
+        def __init__(self):
+            self.request = Request()
+
+        def users(self):
+            return self
+
+        def drafts(self):
+            return self
+
+        def create(self, **kwargs):
+            return self.request
+
+    service = Service()
+    with pytest.raises(TimeoutError):
+        GmailClient(service).create_draft(email, email.subject, "Safe response")
+    assert service.request.calls == 1
+
+
 def test_client_has_no_send_method():
     assert not hasattr(GmailClient, "send")
     assert not hasattr(GmailClient, "send_message")
@@ -64,6 +110,31 @@ def test_client_has_no_send_method():
     assert ".messages().send(" not in source
     assert ".drafts().send(" not in source
     assert "gmail.send" not in source
+    for forbidden_call in (
+        ".messages().modify(",
+        ".messages().delete(",
+        ".threads().modify(",
+        ".threads().delete(",
+        ".trash(",
+        ".untrash(",
+    ):
+        assert forbidden_call not in source
+
+
+def test_production_code_has_no_gmail_mutation_helpers():
+    forbidden = {"send", "modify", "delete", "trash", "untrash"}
+    files = [Path("app.py"), *Path("ned_agent").glob("*.py")]
+    calls = []
+    for path in files:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        calls.extend(
+            (path, node.func.attr)
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr in forbidden
+        )
+    assert calls == []
 
 
 def test_draft_listing_paginates_for_reconciliation():

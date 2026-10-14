@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -16,7 +15,6 @@ class Database:
     def __init__(self, path: str | Path):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._local = threading.local()
         self.migrate()
 
     def connect(self) -> sqlite3.Connection:
@@ -120,26 +118,6 @@ class Database:
                         created_at TEXT NOT NULL
                     );
                     CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_events(created_at DESC);
-                    CREATE TABLE IF NOT EXISTS sync_runs (
-                        id INTEGER PRIMARY KEY,
-                        source TEXT NOT NULL,
-                        started_at TEXT NOT NULL,
-                        completed_at TEXT,
-                        status TEXT NOT NULL,
-                        fetched_count INTEGER NOT NULL DEFAULT 0,
-                        processed_count INTEGER NOT NULL DEFAULT 0,
-                        error TEXT
-                    );
-                    CREATE TABLE IF NOT EXISTS settings (
-                        key TEXT PRIMARY KEY,
-                        value TEXT NOT NULL,
-                        updated_at TEXT NOT NULL
-                    );
-                    CREATE TABLE IF NOT EXISTS locks (
-                        name TEXT PRIMARY KEY,
-                        owner TEXT NOT NULL,
-                        expires_at TEXT NOT NULL
-                    );
                     """
                 )
                 db.execute("DELETE FROM schema_version")
@@ -269,5 +247,4 @@ class Database:
     def clear_local_data(self, source: str) -> None:
         with self.transaction(immediate=True) as db:
             db.execute("DELETE FROM audit_events WHERE source=?", (source,))
-            db.execute("DELETE FROM sync_runs WHERE source=?", (source,))
             db.execute("DELETE FROM messages WHERE source=?", (source,))

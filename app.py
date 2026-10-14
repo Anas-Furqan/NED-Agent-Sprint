@@ -45,6 +45,16 @@ def sync_executor() -> ThreadPoolExecutor:
     return ThreadPoolExecutor(max_workers=1, thread_name_prefix="ned-agent-sync")
 
 
+def full_width_dataframe(data, **kwargs):
+    """Render full-width tables across supported Streamlit releases."""
+    version = tuple(int(part) for part in st.__version__.split(".")[:2])
+    if version >= (1, 65):
+        kwargs["width"] = "stretch"
+    else:
+        kwargs["use_container_width"] = True
+    return st.dataframe(data, **kwargs)
+
+
 def provider_for(settings: Settings):
     if not settings.gemini_api_key:
         return None
@@ -107,10 +117,9 @@ def render_overview(db: Database, source: str, gmail_connected: bool) -> None:
     st.subheader("Recent activity")
     events = db.list_audit(source, 12)
     if events:
-        st.dataframe(
+        full_width_dataframe(
             events,
             hide_index=True,
-            use_container_width=True,
             column_order=("created_at", "event_type", "detail", "level"),
         )
     else:
@@ -139,7 +148,7 @@ def render_inbox(db: Database, source: str, categories: tuple[str, ...]) -> None
         "received_at",
         "draft_status",
     )
-    st.dataframe(view, column_order=columns, hide_index=True, use_container_width=True)
+    full_width_dataframe(view, column_order=columns, hide_index=True)
     if not filtered:
         return
     options = {f"#{row['id']} · {row['subject'][:70]}": row for row in filtered}
@@ -154,6 +163,10 @@ def render_inbox(db: Database, source: str, categories: tuple[str, ...]) -> None
     with right:
         st.subheader("Agent assessment")
         st.write(f"**{selected['category'] or 'Pending'} · {selected['priority'] or '—'}**")
+        provider_label = selected["provider"] or "Not classified"
+        if selected["used_fallback"]:
+            provider_label += " · Limited fallback used"
+        st.caption(f"Provider: {provider_label}")
         st.write(selected["reasoning"] or "Not classified yet.")
         st.progress(
             (selected["confidence"] or 0) / 100,
@@ -165,10 +178,16 @@ def render_inbox(db: Database, source: str, categories: tuple[str, ...]) -> None
         )
     st.subheader("Reply")
     if selected["reply_preview"]:
+        if selected["draft_status"] == "saved":
+            status_label = "<span class='saved'>Saved in Gmail</span>"
+        elif selected["draft_status"] == "unknown":
+            status_label = (
+                "<span class='preview'>Gmail save outcome unknown — check Gmail manually</span>"
+            )
+        else:
+            status_label = "<span class='preview'>Local preview only</span>"
         st.markdown(
-            "<span class='saved'>Saved in Gmail</span>"
-            if selected["draft_status"] == "saved"
-            else "<span class='preview'>Local preview only</span>",
+            status_label,
             unsafe_allow_html=True,
         )
         st.text_area("Reply preview", selected["reply_preview"], height=180, disabled=True)
@@ -187,10 +206,9 @@ def render_escalations(db: Database, source: str) -> None:
         if (severity == "All" or row["severity"] == severity)
         and (status == "All" or row["status"] == status)
     ]
-    st.dataframe(
+    full_width_dataframe(
         rows,
         hide_index=True,
-        use_container_width=True,
         column_order=("id", "severity", "reason", "subject", "status", "created_at"),
     )
     if rows:
@@ -219,10 +237,9 @@ def render_drafts(db: Database, source: str) -> None:
         for row in db.list_messages(source)
         if row["reply_preview"] or row["draft_status"] != "none"
     ]
-    st.dataframe(
+    full_width_dataframe(
         rows,
         hide_index=True,
-        use_container_width=True,
         column_order=("id", "subject", "sender", "draft_status", "gmail_draft_id", "updated_at"),
     )
     st.info("This application never sends email. Review and send saved drafts manually in Gmail.")
@@ -250,7 +267,7 @@ def render_diagnostics(db: Database, source: str, settings: Settings) -> None:
     st.write("Policy:", str(settings.policy_file))
     st.write("Database:", str(settings.database_path))
     st.subheader("Sanitized events")
-    st.dataframe(db.list_audit(source, 200), hide_index=True, use_container_width=True)
+    full_width_dataframe(db.list_audit(source, 200), hide_index=True)
 
 
 def render_settings(db: Database, source: str, settings: Settings) -> None:

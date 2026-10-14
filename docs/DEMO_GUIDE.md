@@ -14,7 +14,8 @@
 
 1. Open **Demo mode** and point out the visible mode badge. Select Sync Now. Show ordinary billing,
    missing refund information, technical, angry/non-dangerous, legal, security/privacy, injection,
-   ambiguous, empty/malformed, duplicate, LLM-failure, and Gmail-failure fixtures.
+   ambiguous, empty/malformed, duplicate, LLM-failure fallback, and the visibly failed synthetic Gmail
+   case. Demo failures are explicit simulations and make no external API calls.
 2. In Inbox, open a normal item: show grounded reasoning, non-calibrated confidence, relevant policy,
    and the label **Local preview only**.
 3. Open the legal/security/injection cases in Escalations. Explain the deterministic evidence and mark

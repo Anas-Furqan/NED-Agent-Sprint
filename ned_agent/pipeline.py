@@ -6,8 +6,9 @@ from typing import Any
 
 from .classifier import AIProvider, classify_with_fallback
 from .database import Database
+from .demo import DemoFailingProvider
 from .escalation import evaluate_escalation
-from .gmail import GmailClient
+from .gmail import GmailClient, draft_matches_message
 from .logging_utils import sanitize_error
 from .models import NormalizedEmail, RecommendedAction
 from .policy import PolicyDocument
@@ -29,19 +30,6 @@ class Pipeline:
         self.provider = provider
         self.gmail = gmail
 
-    def ingest(self, emails: list[NormalizedEmail]) -> tuple[int, int]:
-        added = 0
-        for email in emails:
-            _, created = self.db.upsert_message(email)
-            added += int(created)
-        source = emails[0].source if emails else "demo"
-        self.db.audit(
-            source,
-            "ingest",
-            f"Fetched {len(emails)}; added {added}; duplicates {len(emails) - added}",
-        )
-        return len(emails), added
-
     def process_email(self, email: NormalizedEmail, create_live_draft: bool = True) -> str:
         message_id, _ = self.db.upsert_message(email)
         current = self.db.get_message(message_id)
@@ -51,9 +39,16 @@ class Pipeline:
             return "busy"
         started = time.perf_counter()
         try:
+            if email.source == "demo" and email.demo_failure == "gmail":
+                raise RuntimeError("Simulated Gmail API failure (Demo mode; no API call was made)")
+            provider = (
+                DemoFailingProvider()
+                if email.source == "demo" and email.demo_failure == "llm"
+                else self.provider
+            )
             relevant_policy = self.policy.relevant([email.subject])
             classification = classify_with_fallback(
-                email, self.provider, self.categories, relevant_policy
+                email, provider, self.categories, relevant_policy
             )
             escalation = evaluate_escalation(email, classification)
             if escalation.required:
@@ -62,8 +57,17 @@ class Pipeline:
                     dict.fromkeys(classification.escalation_reasons + escalation.reasons)
                 )
             relevant_policy = self.policy.relevant([classification.category])
-            draft = generate_reply(email, classification, relevant_policy, self.provider)
+            draft = generate_reply(email, classification, relevant_policy, provider)
             elapsed = int((time.perf_counter() - started) * 1000)
+            draft_status = (
+                "unknown"
+                if current and current.get("draft_status") == "unknown"
+                else "pending"
+                if draft.safe_to_save and email.source == "live"
+                else "local_preview"
+                if draft.safe_to_save
+                else "disabled"
+            )
             with self.db.transaction(immediate=True) as db:
                 db.execute(
                     """UPDATE messages SET category=?,priority=?,sentiment=?,intent_summary=?,
@@ -87,11 +91,7 @@ class Pipeline:
                         self.policy.sha256,
                         draft.subject,
                         draft.body,
-                        "pending"
-                        if draft.safe_to_save and email.source == "live"
-                        else "local_preview"
-                        if draft.safe_to_save
-                        else "disabled",
+                        draft_status,
                         elapsed,
                         self.db.now(),
                         message_id,
@@ -152,7 +152,29 @@ class Pipeline:
         if row and row.get("gmail_draft_id"):
             return
         existing = self._find_existing_draft(email)
-        result = existing or self.gmail.create_draft(email, subject, body)  # type: ignore[union-attr]
+        if existing:
+            result = existing
+        elif row and row.get("draft_status") == "unknown":
+            raise RuntimeError(
+                "Previous Gmail draft outcome is ambiguous; no marked draft was found. "
+                "Confirm the Gmail Drafts folder before a manual retry."
+            )
+        else:
+            try:
+                result = self.gmail.create_draft(email, subject, body)  # type: ignore[union-attr]
+            except Exception as error:
+                status = getattr(getattr(error, "resp", None), "status", None)
+                draft_status = (
+                    "unknown"
+                    if status is None or status in (408, 429) or status >= 500
+                    else "failed"
+                )
+                with self.db.transaction(immediate=True) as db:
+                    db.execute(
+                        "UPDATE messages SET draft_status=?,updated_at=? WHERE id=?",
+                        (draft_status, self.db.now(), message_id),
+                    )
+                raise
         with self.db.transaction(immediate=True) as db:
             db.execute(
                 "UPDATE messages SET gmail_draft_id=?,draft_status='saved',updated_at=? WHERE id=?",
@@ -164,7 +186,11 @@ class Pipeline:
             return None
         for item in self.gmail.list_drafts():
             if item.get("message", {}).get("threadId") == email.thread_id:
-                return item
+                draft_id = item.get("id")
+                if draft_id:
+                    draft = self.gmail.get_draft(draft_id)
+                    if draft_matches_message(draft, email.message_id):
+                        return draft
         return None
 
     def run(self, emails: list[NormalizedEmail], create_live_drafts: bool = True) -> dict[str, int]:

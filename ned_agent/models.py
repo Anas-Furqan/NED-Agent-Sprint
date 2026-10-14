@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -60,6 +61,7 @@ class NormalizedEmail(BaseModel):
     rfc_message_id: str | None = None
     references: str | None = None
     source: str = "live"
+    demo_failure: Literal["llm", "gmail"] | None = None
 
     @field_validator("body", "subject", "sender")
     @classmethod
