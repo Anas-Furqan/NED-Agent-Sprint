@@ -27,6 +27,20 @@ copy .env.example .env          # then edit .env
 `check_env.py` (from the kit) reads only environment variables. To use it, set
 `$env:GEMINI_API_KEY="..."` in that terminal first.
 
+
+## Setup (macOS / Linux)
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env          # then edit .env
+```
+
+On macOS/Linux, set the key for `check_env.py` with `export GEMINI_API_KEY="..."`.
+
+
+
 ## Running the agent
 
 ```powershell
