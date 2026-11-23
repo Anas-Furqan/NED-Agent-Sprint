@@ -6,6 +6,10 @@ reply, and writes everything to `outbox.json` in the exact format of `sample_out
 **Nothing is ever sent.** Every step is logged with its reason, and a per-email decision trace
 (`run_trace.json`) feeds a live dashboard.
 
+##live Run 
+https://ned-agent-sprint.streamlit.app/
+
+
 ## Setup (Windows PowerShell)
 
 ```powershell
